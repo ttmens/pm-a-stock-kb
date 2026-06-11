@@ -2,7 +2,7 @@
   "run": "pm-a-stock-kb",
   "path": "D:\\workspace\\projects\\pm-a-stock-kb",
   "pipeline_version": "5.1.0",
-  "validated_at": "2026-06-11T17:47:24.658625+00:00",
+  "validated_at": "2026-06-11T17:48:10.819241+00:00",
   "stages": {
     "grow": {
       "pass": true,
