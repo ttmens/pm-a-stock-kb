@@ -33,9 +33,9 @@
   <div class="meta">
     Repo: <a href="https://github.com/ttmens/pm-a-stock-kb">https://github.com/ttmens/pm-a-stock-kb</a> ·
     Pages: <a href="https://ttmens.github.io/pm-a-stock-kb/">https://ttmens.github.io/pm-a-stock-kb/</a><br/>
-    Commit: b11fd0d · Built: 2026-06-11 16:38 UTC
+    Commit: d2380da · Built: 2026-06-11 16:48 UTC
   </div>
-  <div class="badges"><span class="badge pass">architecture</span> <span class="badge overall pass">overall: pass</span></div>
+  <div class="badges"><span class="badge pass">journey</span> <span class="badge overall pass">overall: pass</span></div>
 
   <div class="tabs" id="tabs">
     <button class="tab" data-tab="RUN-md">运行说明</button><button class="tab" data-tab="00-brief-md">Brief</button><button class="tab" data-tab="CONTEXT-md">Context</button><button class="tab" data-tab="decisions-md">Decisions</button><button class="tab" data-tab="01-research-md">Research</button><button class="tab" data-tab="01b-benchmark-md">Benchmark</button><button class="tab" data-tab="02-analysis-md">Analysis</button><button class="tab" data-tab="03b-user-journey-md">UserJourney</button><button class="tab" data-tab="03-prd-md">PRD</button><button class="tab" data-tab="05-retro-md">Retro</button><button class="tab" data-tab="06-refine-retro-md">RefineRetro</button><button class="tab" data-tab="RUNBOOK-md">Ship</button><button class="tab" data-tab="07-ops-notes-md">Operate</button><button class="tab" data-tab="06-growth-md">Grow</button><button class="tab" data-tab="docs/ui-acceptance-report-md">UIAcceptance</button>
@@ -690,7 +690,225 @@ Gold层（因子/特征）
 2. **数据源优先级**：AKShare（行情/财报）→ Tushare（财务指标）→ 自建爬虫（舆情）
 3. **技术验证顺序**：SQLite原型 → ES集成 → LLM情感分析 → 事件链构建
 4. **基础设施**：确认VPS配置（8GB RAM/4 vCPU/100GB SSD），准备Docker Compose环境
-</pre></div><div class="panel" id="03b-user-journey-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="03-prd-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="05-retro-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="06-refine-retro-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="RUNBOOK-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="07-ops-notes-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="06-growth-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="docs/ui-acceptance-report-md"><p><em>Not generated yet.</em></p></div>
+</pre></div><div class="panel" id="03b-user-journey-md"><pre class="md-source"># 用户旅程地图 — A股全量信息检索知识库
+
+## Personas
+
+| ID | 角色 | 目标 | 痛点 |
+|----|------|------|------|
+| P1 | 个人量化投资者 | 快速检索个股历史事件，构建交易策略因子 | 信息分散在数十个平台，无法按时间线串联个股事件；Wind/iFinD年费过高 |
+| P2 | 独立研究员/分析师 | 深度挖掘某行业/概念板块的政策与公告关联 | 缺乏跨股票的批量检索能力，研报阅读效率低 |
+| P3 | 中小型私募操盘手 | 监控持仓股票舆情与资金异动，快速响应 | 盘中缺乏轻量工具，传统终端操作繁琐 |
+| P4 | ETL调度Agent（系统角色） | 定时采集数据、执行清洗、触发LLM情感分析 | 需无人值守运行，失败需自动重试与告警 |
+
+## 核心旅程
+
+### J1：查询个股事件链（P1 核心路径）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J1-1 | P1 | 触发 | 输入股票代码或名称（如&quot;贵州茅台&quot;/&quot;600519&quot;） | 自动补全匹配股票列表 | TP-搜索框 | 中性 — 希望快速定位 |
+| J1-2 | P1 | 检索 | 点击目标股票，选择时间范围（近7天/30天/自定义） | 返回按时间排序的事件链时间线 | TP-事件链时间线 | 满意 — 信息按因果顺序组织 |
+| J1-3 | P1 | 浏览 | 滚动浏览事件链，点击某条事件查看详情 | 展开事件详情：标题、摘要、来源、情感因子 | TP-事件详情面板 | 满意 — 一站式获取完整上下文 |
+| J1-4 | P1 | 筛选 | 按事件类型过滤（仅看公告/仅看舆情） | 时间线即时刷新，仅显示匹配类型 | TP-事件过滤器 | 满意 — 快速聚焦关注的事件类型 |
+| J1-5 | P1 | 完成 | 确认事件链信息满足策略研究需求 | 系统记录查询历史（本地） | TP-查询完成 | 满足 — 比传统终端效率更高 |
+
+**成功标准**：用户在30秒内找到目标股票的完整事件链，能按类型筛选并查看事件详情。
+
+### J2：全文搜索公告/研报（P1 + P2）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J2-1 | P1/P2 | 触发 | 在搜索框输入关键词（如&quot;芯片 制裁&quot;） | 返回搜索结果列表，关键词高亮 | TP-搜索结果列表 | 中性 — 期待相关性 |
+| J2-2 | P1/P2 | 筛选 | 按股票/时间/事件类型过滤结果 | 结果列表即时刷新 | TP-搜索过滤器 | 满意 — 精确控制结果范围 |
+| J2-3 | P1/P2 | 阅读 | 点击某条结果，查看公告/研报全文 | 展示原文内容，保留关键词高亮 | TP-全文查看器 | 满意 — 无需跳转外部平台 |
+| J2-4 | P1/P2 | 关联 | 查看该文档关联的个股事件链 | 侧栏展示相关股票的时间线摘要 | TP-关联推荐 | 惊喜 — 发现跨文档关联 |
+| J2-5 | P1/P2 | 完成 | 保存感兴趣的文档或导出搜索结果 | 导出为CSV/JSON，或加入书签 | TP-导出/收藏 | 满足 — 数据可用于后续分析 |
+
+**成功标准**：搜索P95延迟&lt;100ms，用户能在3次点击内找到并阅读目标文档。
+
+### J3：查看与导出因子数据（P1 量化需求）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J3-1 | P1 | 触发 | 进入&quot;因子&quot;页面，选择股票或板块 | 展示因子数据表格（日期、因子名、因子值） | TP-因子数据表格 | 中性 — 需要结构化数据 |
+| J3-2 | P1 | 筛选 | 选择因子类型（情感/动量/波动率）和时间范围 | 表格刷新，支持排序 | TP-因子过滤器 | 满意 — 快速定位目标因子 |
+| J3-3 | P1 | 可视化 | 点击&quot;图表&quot;切换至折线图/柱状图视图 | 渲染因子时间序列图表 | TP-因子图表 | 满意 — 直观观察趋势 |
+| J3-4 | P1 | 导出 | 点击&quot;导出CSV&quot;下载因子数据 | 生成CSV文件，浏览器自动下载 | TP-因子导出 | 满足 — 可直接用于ML训练 |
+
+**成功标准**：因子数据可筛选、可视化，一键导出为ML就绪的CSV格式。
+
+### J4：ETL管道状态监控（P4 系统角色 + P1 人工确认）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J4-1 | P1 | 触发 | 进入&quot;系统状态&quot;页面 | 展示各组件健康状态（PG/ES/Redis/LLM）和最近采集时间 | TP-系统仪表盘 | 安心 — 系统运行正常 |
+| J4-2 | P1 | 检查 | 查看最近一次ETL运行详情 | 展示采集数量、成功率、耗时、错误日志 | TP-ETL运行日志 | 关注 — 确认数据完整性 |
+| J4-3 | P1 | 操作 | 点击&quot;手动触发采集&quot;或&quot;重新运行ETL&quot; | 系统提交任务，显示进度条 | TP-手动触发 | 掌控感 — 可主动干预 |
+| J4-4 | P1 | 完成 | 确认数据已更新至最新交易日 | 页面显示&quot;数据已更新至 T+1&quot; | TP-更新确认 | 满足 — 数据新鲜度达标 |
+
+**成功标准**：用户可实时查看系统健康状态，手动触发采集/ETL，确认数据更新。
+
+## 屏幕映射
+
+| 屏幕 | 旅程ID | 信息优先级（首屏必见） | 关联 US |
+|------|--------|------------------------|---------|
+| **S1 — 搜索仪表盘**（首页） | J1-1, J2-1 | 搜索框（最大可见性）、最近查询股票快捷入口、系统状态摘要 | US-1, US-2 |
+| **S2 — 个股事件链** | J1-2, J1-3, J1-4, J1-5 | 股票名称/代码、时间线（按时间倒序）、事件类型标签、情感因子色块 | US-1 |
+| **S3 — 搜索结果页** | J2-2, J2-3, J2-4, J2-5 | 关键词输入框、结果列表（标题+摘要+高亮）、过滤器（股票/时间/类型） | US-2 |
+| **S4 — 因子数据页** | J3-1, J3-2, J3-3, J3-4 | 股票选择器、因子表格/图表切换、导出按钮 | US-3 |
+| **S5 — 系统状态页** | J4-1, J4-2, P4 | 组件健康指示器（绿/黄/红）、最近ETL运行状态、手动触发按钮 | US-4, US-5 |
+| **S6 — 事件详情面板**（弹窗/侧栏） | J1-3, J2-3 | 事件标题、完整内容、来源链接、发布时间、情感评分 | US-1, US-2 |
+
+## 核心路径（≤3）
+
+1. **搜索 → 事件链浏览**：用户在首页输入股票代码 → 查看事件链时间线 → 筛选事件类型 → 查看详情（覆盖 J1，P1 最高频路径）
+2. **关键词搜索 → 文档阅读**：用户输入关键词 → 浏览搜索结果 → 阅读全文 → 查看关联事件链（覆盖 J2，P1+P2 通用路径）
+3. **因子查看 → 导出**：用户选择股票 → 查看因子数据 → 切换图表 → 导出CSV（覆盖 J3，P1 量化需求）
+</pre></div><div class="panel" id="03-prd-md"><pre class="md-source"># 03 — 产品需求文档（PRD）：A股全量信息检索知识库
+
+## 产品愿景
+
+为个人量化投资者提供零订阅费、单VPS部署的A股知识库，以**个股事件链**为核心组织方式，支持毫秒级全文检索、LLM情感因子生成和ML就绪数据导出。
+
+## 目标用户
+
+| Persona | 描述 | 核心需求 |
+|---------|------|----------|
+| P1 个人量化投资者 | 具备Python/SQL基础，有策略回测需求 | 快速获取个股事件链和因子数据 |
+| P2 独立研究员 | 深度挖掘行业/板块的政策与公告关联 | 跨股票批量检索和文档阅读 |
+| P3 中小型私募操盘手 | 监控持仓股票舆情与资金异动 | 轻量工具快速响应市场变化 |
+| P4 ETL调度Agent | 系统角色，无人值守运行数据管道 | 定时采集、清洗、分析、告警 |
+
+## MVP范围
+
+**In Scope（P0-P1）**：
+- 个股事件链查询与浏览（P0）
+- 全文搜索公告/研报/舆情（P0）
+- 因子数据查看与CSV导出（P1）
+- 系统状态监控与手动触发ETL（P1）
+- 单用户Token认证（P1）
+
+**Out of Scope（MVP阶段）**：
+- 多用户/权限管理
+- 盘中实时数据推送
+- 策略回测引擎
+- 移动端原生App
+- 全市场5000+股票覆盖（MVP聚焦沪深300）
+
+## 用户故事（≤5）
+
+### US-1：作为个人投资者，我想按时间线查看某只股票的完整事件链，以便快速了解该股票的近期动态
+
+**旅程映射**：J1-1 → J1-2 → J1-3 → J1-4 → J1-5（核心路径1）
+**屏幕映射**：S1（搜索仪表盘）→ S2（个股事件链）→ S6（事件详情面板）
+
+**验收标准**：
+1. 输入股票代码或名称，3秒内显示匹配结果
+2. 点击股票后，按时间倒序展示事件链，包含公告/财报/资金/舆情四种类型
+3. 每条事件显示：标题、时间、类型标签、情感因子色块（正面绿色/负面红色/中性灰色）
+4. 点击事件可展开查看详情：完整内容、来源链接、发布时间
+5. 支持按事件类型过滤，过滤后即时刷新
+6. 支持选择时间范围：近7天/近30天/近90天/自定义
+7. 沪深300成分股事件链数据覆盖率≥80%（H4假设）
+
+**优先级**：P0（核心差异化功能）
+
+---
+
+### US-2：作为研究员，我想搜索包含特定关键词的公告和研报，以便发现市场热点和关联信息
+
+**旅程映射**：J2-1 → J2-2 → J2-3 → J2-4 → J2-5（核心路径2）
+**屏幕映射**：S1（搜索仪表盘）→ S3（搜索结果页）→ S6（全文查看器）
+
+**验收标准**：
+1. 输入关键词后，P95搜索延迟&lt;100ms（H2假设）
+2. 搜索结果列表显示：标题（关键词高亮）、摘要（关键词高亮）、股票代码、发布时间、事件类型
+3. 支持按股票代码、时间范围、事件类型过滤搜索结果
+4. 点击结果可查看原文全文，关键词持续高亮
+5. 全文查看器侧栏展示该文档关联的个股事件链摘要（≥3条相关事件）
+6. 支持导出搜索结果列表为CSV/JSON格式
+
+**优先级**：P0（核心检索能力）
+
+---
+
+### US-3：作为量化投资者，我想查看和导出股票的因子数据，以便直接用于机器学习模型训练
+
+**旅程映射**：J3-1 → J3-2 → J3-3 → J3-4（核心路径3）
+**屏幕映射**：S4（因子数据页）
+
+**验收标准**：
+1. 选择股票后展示因子数据表格，包含：日期、因子名称、因子值
+2. 支持按因子类型筛选（情感因子/动量因子/波动率因子）
+3. 支持按时间范围筛选，表格支持按日期/因子值排序
+4. 提供&quot;图表&quot;切换按钮，可切换为折线图/柱状图展示因子时间序列
+5. 点击&quot;导出CSV&quot;后，浏览器自动下载CSV文件，格式可直接用于ML训练（列名：stock_code, factor_date, factor_name, factor_value）
+6. 情感因子由本地LLM生成，单条处理时间&lt;3秒（H3假设）
+
+**优先级**：P1（ML就绪核心需求）
+
+---
+
+### US-4：作为系统使用者，我想查看数据采集和ETL管道的运行状态，以便确认数据已更新至最新交易日
+
+**旅程映射**：J4-1 → J4-2
+**屏幕映射**：S5（系统状态页）
+
+**验收标准**：
+1. 仪表盘展示各组件健康状态：PostgreSQL、Elasticsearch、Redis、本地LLM（绿/黄/红指示灯）
+2. 显示最近一次ETL运行信息：开始时间、结束时间、采集数量、成功率、耗时
+3. 系统连续运行72小时无OOM事件，内存使用率&lt;85%（H1假设）
+4. 数据新鲜度标识：显示&quot;数据已更新至 T+1 YYYY-MM-DD&quot;或&quot;数据落后 X 天&quot;
+5. 若ETL运行失败，显示错误摘要和最后3条错误日志
+
+**优先级**：P1（运维可见性）
+
+---
+
+### US-5：作为系统使用者，我想手动触发数据采集或ETL任务，以便在数据缺失时主动补救
+
+**旅程映射**：J4-3 → J4-4
+**屏幕映射**：S5（系统状态页）
+
+**验收标准**：
+1. 提供&quot;手动触发采集&quot;按钮，点击后确认对话框提示影响范围
+2. 提供&quot;重新运行ETL&quot;按钮，可选择重新处理指定日期的数据
+3. 任务提交后显示进度指示器（排队中/运行中/完成/失败）
+4. 任务完成后页面自动刷新，显示最新数据状态
+5. 手动触发操作需Token认证（单用户简单token）
+
+**优先级**：P1（运维操作能力）
+
+## 非功能需求
+
+| 指标 | 目标 | 验证方法 |
+|------|------|----------|
+| 全文检索P95延迟 | &lt;100ms | 1000次随机查询基准测试 |
+| 事件链查询响应 | &lt;200ms | 300只股票各查询10次 |
+| LLM情感分析吞吐 | &lt;3秒/条 | 1000条批量处理计时 |
+| 系统可用性 | 99%（月度） | 监控服务健康检查 |
+| 内存使用率 | &lt;85% | 72小时压力测试 |
+| MVP数据覆盖 | 沪深300成分股≥80%数据类型 | 数据源覆盖率统计 |
+
+## 技术约束
+
+- 单VPS部署，建议16GB RAM（ADR-005）
+- MVP阶段仅覆盖沪深300成分股（300只）（ADR-006）
+- 数据新鲜度T+1，不追求盘中实时（ADR-004）
+- 单用户架构，无需多租户（ADR-003）
+- 本地LLM部署（Qwen2.5-7B-GGUF），零API成本（ADR-005）
+
+## 成功指标
+
+| 指标 | 目标值 | 对应假设 |
+|------|--------|----------|
+| 用户查询事件链平均时间 | &lt;30秒 | — |
+| 搜索相关性满意度 | &gt;80%（前3条结果包含目标文档） | — |
+| 因子数据导出成功率 | &gt;99% | — |
+| ETL每日按时完成率 | &gt;95% | H1, H4 |
+| 系统72小时无故障运行 | 是 | H1 |
+</pre></div><div class="panel" id="05-retro-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="06-refine-retro-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="RUNBOOK-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="07-ops-notes-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="06-growth-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="docs/ui-acceptance-report-md"><p><em>Not generated yet.</em></p></div>
   <div class="panel" id="openspec-panel"><h3>openspec/proposal.md</h3><pre class="md-source"># Proposal: A股全量信息检索知识库 — 自研轻量平台
 
 ## Why
@@ -785,6 +1003,15 @@ Gold层（因子/特征）
 - [C4 Level 1 — 系统上下文](../architecture/c4-context.md)
 - [C4 Level 2 — 容器](../architecture/c4-container.md)
 - [C4 Level 3 — 组件](../architecture/c4-component.md)
+
+## 下游文档
+
+- [用户旅程地图](../03b-user-journey.md)：4个Persona + 4条核心旅程 + 屏幕映射
+- [产品需求文档](../03-prd.md)：5个用户故事 + 验收标准 + 非功能需求
+- [前端原型](../02b-prototype/)：搜索仪表盘 + 事件链 + 搜索结果 + 因子 + 系统状态
+- [OpenSpec设计](./design.md)：技术栈 + 数据模型 + 部署架构
+- [OpenSpec任务](./tasks.md)：15个垂直切片任务
+- [Spec Delta](./specs/)：event-chain-query / fulltext-search / factor-export / system-monitor
 </pre>
 <h3>openspec/design.md</h3><pre class="md-source"># Design: A股全量信息检索知识库
 
@@ -792,11 +1019,15 @@ Gold层（因子/特征）
 
 本设计基于C4模型定义的系统架构，详细描述各容器的技术选型、数据流和组件交互。
 
-### C4架构文档链接
+### 相关文档链接
 
 - [C4 Level 1 — 系统上下文](../architecture/c4-context.md)：定义系统边界、外部角色和上下文关系
 - [C4 Level 2 — 容器](../architecture/c4-container.md)：定义9个容器及其技术栈、内存预算
 - [C4 Level 3 — 组件](../architecture/c4-component.md)：分解API网关容器的7个内部组件
+- [用户旅程地图](../03b-user-journey.md)：4个Persona + 4条核心旅程 + 6个屏幕映射
+- [产品需求文档](../03-prd.md)：5个用户故事（US-1 ~ US-5），验收标准
+- [OpenSpec任务清单](./tasks.md)：15个垂直切片任务
+- [前端原型](../02b-prototype/)：搜索仪表盘 + 事件链 + 搜索结果 + 因子 + 系统状态
 
 ## 技术栈选型
 
@@ -1051,6 +1282,447 @@ volumes:
 | LLM情感分析吞吐 | &lt;3秒/条 | 1000条批量处理计时 |
 | 系统可用性 | 99% (月度) | 监控服务健康检查 |
 | 内存使用率 | &lt;85% | 72小时压力测试 |
+</pre>
+<h3>openspec/tasks.md</h3><pre class="md-source"># Tasks: A股全量信息检索知识库 — MVP
+
+&gt; 垂直切片，按用户旅程优先级排序。每个任务可独立完成和验证。
+&gt; 对应PRD：`03-prd.md`，对应旅程：`03b-user-journey.md`
+
+## Slice 1: 基础设施与数据库（J1/J2/J3/J4 依赖）
+
+### Task 1: Docker Compose 编排与数据库初始化
+- **文件**: `docker-compose.yml`, `scripts/init-db.sql`, `.env.example`
+- **验证**: `docker compose up -d` 后 PG/ES/Redis 容器全部 healthy
+- **完成标准**: PG 创建 `astock_kb` 数据库和 `stocks`/`events`/`factor_values` 表；ES 创建 `announcements-*` 索引模板；Redis 可访问
+
+### Task 2: FastAPI 项目骨架与Token认证
+- **文件**: `api/main.py`, `api/requirements.txt`, `api/middleware/auth.py`
+- **验证**: `curl -H &quot;Authorization: Bearer test-token&quot; http://localhost:8000/api/health` 返回 200
+- **完成标准**: FastAPI 启动成功，`/api/health` 端点可用，无Token返回401
+
+## Slice 2: 个股事件链（US-1, J1）
+
+### Task 3: 股票搜索与匹配 API
+- **文件**: `api/routes/stocks.py`, `api/services/stock_search.py`
+- **验证**: `GET /api/stocks?q=茅台` 返回匹配列表（含贵州茅台）
+- **完成标准**: 支持代码精确匹配和名称模糊匹配，响应&lt;3秒，返回≤10条
+
+### Task 4: 事件链查询 API
+- **文件**: `api/routes/events.py`, `api/services/event_chain.py`
+- **验证**: `GET /api/events/600519.SH?days=30` 返回按时间倒序的事件列表
+- **完成标准**: 包含事件类型、情感因子、来源字段；支持type过滤；响应&lt;200ms
+
+### Task 5: 前端 — 搜索仪表盘 + 事件链时间线
+- **文件**: `02b-prototype/index.html`（升级为真实前端或新建 `web/`）
+- **验证**: 浏览器打开后输入股票代码可看到事件链时间线，类型过滤生效
+- **完成标准**: 覆盖J1完整路径：搜索 → 时间线 → 类型过滤 → 事件详情弹窗
+
+## Slice 3: 全文搜索（US-2, J2）
+
+### Task 6: ES 全文搜索 API
+- **文件**: `api/routes/search.py`, `api/services/fulltext_search.py`
+- **验证**: `GET /api/search?q=芯片+制裁` 返回相关结果，关键词高亮
+- **完成标准**: P95延迟&lt;100ms；支持分页；返回标题/摘要/股票/时间/类型字段
+
+### Task 7: 前端 — 搜索结果页 + 全文查看器
+- **文件**: `web/templates/search.html`, `web/static/js/search.js`
+- **验证**: 搜索结果列表显示关键词高亮，点击可查看关联事件链
+- **完成标准**: 覆盖J2完整路径：关键词搜索 → 结果列表 → 过滤 → 全文查看 → 关联推荐
+
+## Slice 4: 因子数据（US-3, J3）
+
+### Task 8: 因子数据查询 API
+- **文件**: `api/routes/factors.py`, `api/services/factor_query.py`
+- **验证**: `GET /api/factors/600519.SH?factor_type=sentiment&amp;days=30` 返回因子列表
+- **完成标准**: 支持按因子类型和时间范围筛选；支持排序
+
+### Task 9: 因子导出 CSV
+- **文件**: `api/routes/factors.py` (export endpoint), `api/services/factor_export.py`
+- **验证**: `POST /api/factors/export` 返回可下载的CSV文件，列名匹配约定
+- **完成标准**: CSV可被 `pd.read_csv()` 直接读取，无格式错误
+
+### Task 10: 前端 — 因子数据表格 + 图表 + 导出
+- **文件**: `web/templates/factors.html`, `web/static/js/factors.js`
+- **验证**: 因子表格可排序，图表正确渲染情感因子时间序列，导出按钮触发下载
+- **完成标准**: 覆盖J3完整路径：查看 → 筛选 → 图表切换 → CSV导出
+
+## Slice 5: 系统监控（US-4/US-5, J4）
+
+### Task 11: 健康检查 API
+- **文件**: `api/routes/health.py`, `api/services/health_check.py`
+- **验证**: `GET /api/health` 返回各组件状态（healthy/unhealthy）、内存使用、运行时长
+- **完成标准**: PG/ES/Redis/LLM四项健康检查全部实现；响应&lt;2秒
+
+### Task 12: ETL调度与日志 API
+- **文件**: `api/routes/schedule.py`, `api/services/etl_scheduler.py`
+- **验证**: `POST /api/schedule/collect` 提交采集任务，`GET /api/schedule/status/{id}` 查询进度
+- **完成标准**: 手动触发需Token认证；任务状态：queued → running → completed/failed
+
+### Task 13: 前端 — 系统状态仪表盘
+- **文件**: `web/templates/system.html`, `web/static/js/system.js`
+- **验证**: 页面显示组件健康指示灯、ETL日志、手动触发按钮
+- **完成标准**: 覆盖J4完整路径：查看状态 → 查看日志 → 手动触发 → 确认更新
+
+## Slice 6: 数据采集与ETL（后端核心）
+
+### Task 14: 数据采集器（AKShare + Tushare）
+- **文件**: `collector/main.py`, `collector/sources/akshare.py`, `collector/sources/tushare.py`
+- **验证**: 运行后沪深300成分股行情数据写入 `bronze/akshare/daily/` 目录
+- **完成标准**: 覆盖率≥80%（H4）；遵循频率限制；Bronze层JSON格式统一
+
+### Task 15: ETL管道（Bronze → Silver → Gold）
+- **文件**: `etl/pipeline.py`, `etl/bronze_to_silver.py`, `etl/silver_to_gold.py`
+- **验证**: 运行后 PG `events` 表和 ES 索引中有数据，去重逻辑生效
+- **完成标准**: SHA-256去重 + 实体对齐（股票代码标准化）；事件链按stock_code+event_time排序
+
+## 任务统计
+
+| 切片 | 任务数 | 对应US | 对应旅程 |
+|------|--------|--------|----------|
+| 基础设施 | 2 | 全部 | J1/J2/J3/J4 |
+| 事件链 | 3 | US-1 | J1 |
+| 全文搜索 | 2 | US-2 | J2 |
+| 因子数据 | 3 | US-3 | J3 |
+| 系统监控 | 3 | US-4, US-5 | J4 |
+| 数据采集 | 2 | 后端支撑 | — |
+| **总计** | **15** | **5** | **4** |
+
+## 构建顺序建议
+
+1. **Task 1-2**（基础设施）→ 可独立验证容器和API骨架
+2. **Task 14-15**（数据采集+ETL）→ 产生测试数据供前端使用
+3. **Task 3-5**（事件链）→ 核心差异化功能，优先交付
+4. **Task 6-7**（全文搜索）→ 第二核心功能
+5. **Task 8-10**（因子数据）→ 量化用户需求
+6. **Task 11-13**（系统监控）→ 运维可见性
+</pre>
+<h3>openspec/specs/event-chain-query.md</h3><pre class="md-source"># Spec Delta: 个股事件链查询
+
+## Status: ADDED
+
+## User Story
+
+US-1：作为个人投资者，我想按时间线查看某只股票的完整事件链，以便快速了解该股票的近期动态
+
+**旅程映射**：J1-1 → J1-2 → J1-3 → J1-4 → J1-5
+
+## Requirements
+
+### REQ-1.1 股票搜索与匹配
+- 用户输入股票代码（6位数字）或股票名称，系统返回匹配的股票列表
+- 匹配优先级：精确代码匹配 &gt; 名称前缀匹配 &gt; 名称模糊匹配
+- 返回结果≤10条，包含：stock_code, stock_name, industry
+- 响应时间：&lt;3秒
+
+### REQ-1.2 事件链查询
+- 输入：stock_code + 时间范围（7天/30天/90天/自定义）
+- 输出：按 event_time DESC 排序的事件列表
+- 每条事件包含：event_id, event_type, event_time, title, sentiment_score, source
+- 支持的事件类型：announcement（公告）、financial（财报）、capital（资金）、social（舆情）
+
+### REQ-1.3 事件类型过滤
+- 用户可点击类型标签过滤事件链
+- 过滤后即时刷新，无需重新请求全量数据
+- 前端缓存全量事件链，过滤为客户端操作
+
+### REQ-1.4 事件详情展示
+- 点击事件条目弹出详情面板
+- 详情包含：完整内容、来源链接、发布时间、情感评分、关联事件
+- 关联事件：同一股票前后5天内的其他事件（最多5条）
+
+### REQ-1.5 情感因子可视化
+- 事件条目右侧显示情感因子色块
+- 正面（&gt;0.2）：绿色；负面（&lt;-0.2）：红色；中性：灰色
+- 色块显示情感因子数值和简短标签（利好/利空/中性）
+
+## API Contract
+
+```
+GET /api/events/{stock_code}?days=30&amp;type=all
+Response:
+{
+  &quot;stock_code&quot;: &quot;600519.SH&quot;,
+  &quot;stock_name&quot;: &quot;贵州茅台&quot;,
+  &quot;events&quot;: [
+    {
+      &quot;event_id&quot;: 12345,
+      &quot;event_type&quot;: &quot;announcement&quot;,
+      &quot;event_time&quot;: &quot;2026-06-11T15:30:00+08:00&quot;,
+      &quot;title&quot;: &quot;贵州茅台关于2025年度利润分配实施公告&quot;,
+      &quot;content&quot;: &quot;...&quot;,
+      &quot;sentiment_score&quot;: 0.72,
+      &quot;source&quot;: &quot;AKShare&quot;,
+      &quot;raw_data_id&quot;: &quot;bronze/akshare/daily/2026-06-11/600519.SH.json&quot;
+    }
+  ],
+  &quot;total&quot;: 8,
+  &quot;query_time_ms&quot;: 45
+}
+```
+
+## Data Model
+
+依赖已有 Silver 层 `events` 表（见 openspec/design.md）：
+- 查询主表：`events` JOIN `stocks`
+- 索引：`idx_events_stock_time` (stock_code, event_time DESC)
+- 过滤：`events.event_type IN (...)`
+
+## Acceptance Criteria
+
+1. 沪深300成分股事件链数据覆盖率≥80%
+2. 查询响应时间&lt;200ms（P95）
+3. 事件按时间倒序排列，类型标签正确
+4. 情感因子色块颜色与数值对应关系正确
+5. 关联事件推荐在±5天时间窗口内
+</pre>
+<h3>openspec/specs/factor-export.md</h3><pre class="md-source"># Spec Delta: 因子数据查看与导出
+
+## Status: ADDED
+
+## User Story
+
+US-3：作为量化投资者，我想查看和导出股票的因子数据，以便直接用于机器学习模型训练
+
+**旅程映射**：J3-1 → J3-2 → J3-3 → J3-4
+
+## Requirements
+
+### REQ-3.1 因子数据查询
+- 输入：stock_code + 因子类型（全部/情感/动量/波动率）+ 时间范围
+- 输出：因子数据列表，包含日期、因子名称、因子值、来源
+- 支持按日期或因子值排序
+
+### REQ-3.2 因子数据可视化
+- 提供&quot;表格&quot;和&quot;图表&quot;两种视图
+- 表格视图：标准数据表格，支持排序
+- 图表视图：折线图展示因子时间序列
+- 情感因子图表需标注零线（正负区分）
+
+### REQ-3.3 因子数据导出
+- 导出格式：CSV
+- CSV列名：stock_code, factor_date, factor_name, factor_value
+- 导出文件名：`{stock_code}_factors.csv`
+- 浏览器自动下载，无需额外页面跳转
+
+### REQ-3.4 情感因子生成
+- 由本地LLM（Qwen2.5-7B-GGUF）批量离线处理
+- 输入：新闻标题 + 内容摘要
+- 输出：情感因子（-1 ~ +1浮点数）
+- 单条处理时间&lt;3秒
+
+## API Contract
+
+```
+GET /api/factors/{stock_code}?factor_type=all&amp;days=30&amp;sort=date_desc
+Response:
+{
+  &quot;stock_code&quot;: &quot;600519.SH&quot;,
+  &quot;factors&quot;: [
+    {
+      &quot;factor_date&quot;: &quot;2026-06-11&quot;,
+      &quot;factor_name&quot;: &quot;sentiment&quot;,
+      &quot;factor_value&quot;: 0.72,
+      &quot;source&quot;: &quot;LLM&quot;
+    },
+    {
+      &quot;factor_date&quot;: &quot;2026-06-11&quot;,
+      &quot;factor_name&quot;: &quot;momentum&quot;,
+      &quot;factor_value&quot;: 0.035,
+      &quot;source&quot;: &quot;计算&quot;
+    }
+  ],
+  &quot;total&quot;: 90
+}
+
+POST /api/factors/export
+Body: { &quot;stock_codes&quot;: [&quot;600519.SH&quot;], &quot;factor_types&quot;: [&quot;all&quot;], &quot;days&quot;: 90 }
+Response: CSV file download (Content-Type: text/csv)
+```
+
+## Data Model
+
+依赖 Silver 层 `factor_values` 表：
+- 查询：`SELECT * FROM factor_values WHERE stock_code = ? AND factor_date &gt;= ? ORDER BY factor_date DESC`
+- 唯一约束：`(stock_code, factor_date, factor_name)`
+
+## Acceptance Criteria
+
+1. 因子数据表格可按日期和因子值排序
+2. 图表正确渲染情感因子时间序列，零线清晰可见
+3. 导出CSV列名与约定一致，可被pandas直接读取
+4. LLM情感分析单条处理时间&lt;3秒
+5. 因子值范围：情感因子 -1~+1，动量/波动率按计算逻辑确定
+</pre>
+<h3>openspec/specs/fulltext-search.md</h3><pre class="md-source"># Spec Delta: 全文搜索
+
+## Status: ADDED
+
+## User Story
+
+US-2：作为研究员，我想搜索包含特定关键词的公告和研报，以便发现市场热点和关联信息
+
+**旅程映射**：J2-1 → J2-2 → J2-3 → J2-4 → J2-5
+
+## Requirements
+
+### REQ-2.1 全文搜索
+- 用户输入关键词（支持多词，空格分隔），系统在ES索引中搜索
+- 搜索范围：公告标题+内容、研报标题+内容、舆情标题+内容
+- 使用 ik_max_word 分词器进行中文分词
+- 支持布尔搜索：空格表示AND，引号表示精确短语
+
+### REQ-2.2 搜索结果展示
+- 结果列表按相关性评分降序排列
+- 每条结果包含：文档ID、标题（关键词高亮）、摘要片段（关键词高亮）、股票代码、发布时间、事件类型
+- 摘要片段长度：150-200字符，关键词居中
+
+### REQ-2.3 结果过滤
+- 支持按股票代码过滤（精确匹配或多选）
+- 支持按时间范围过滤
+- 支持按事件类型过滤（公告/研报/舆情）
+- 多个过滤条件可组合使用
+
+### REQ-2.4 全文查看
+- 点击搜索结果可查看文档全文
+- 全文中关键词持续高亮
+- 侧栏展示关联的个股事件链摘要（≥3条相关事件）
+
+### REQ-2.5 结果导出
+- 支持将搜索结果列表导出为CSV/JSON
+- 导出字段：标题、股票代码、发布时间、事件类型、摘要
+
+## API Contract
+
+```
+GET /api/search?q=芯片+制裁&amp;stock_code=&amp;type=all&amp;days=30&amp;page=1&amp;page_size=20
+Response:
+{
+  &quot;query&quot;: &quot;芯片 制裁&quot;,
+  &quot;total&quot;: 24,
+  &quot;page&quot;: 1,
+  &quot;page_size&quot;: 20,
+  &quot;query_time_ms&quot;: 67,
+  &quot;results&quot;: [
+    {
+      &quot;doc_id&quot;: &quot;ann-20260611-001&quot;,
+      &quot;title&quot;: &quot;工信部：加快&lt;em&gt;芯片&lt;/em&gt;产业自主可控步伐&quot;,
+      &quot;snippet&quot;: &quot;...要求加快半导体产业链国产替代进程，应对国际&lt;em&gt;制裁&lt;/em&gt;风险...&quot;,
+      &quot;stock_code&quot;: &quot;688981.SH&quot;,
+      &quot;publish_time&quot;: &quot;2026-06-11T09:00:00+08:00&quot;,
+      &quot;event_type&quot;: &quot;announcement&quot;,
+      &quot;sentiment_score&quot;: 0.35
+    }
+  ]
+}
+```
+
+## Data Model
+
+依赖 Gold 层 Elasticsearch 索引（见 openspec/design.md）：
+- 索引：`announcements-*`, `reports-*`, `social_posts-*`
+- 分词器：`ik_max_word`
+- 高亮：`highlight` 字段，预标签 `&lt;em&gt;...&lt;/em&gt;`
+
+## Acceptance Criteria
+
+1. P95搜索延迟&lt;100ms（10万文档量级）
+2. 关键词高亮在标题和摘要中正确显示
+3. 过滤条件组合生效，结果正确
+4. 全文查看器关联事件推荐≥3条
+5. 导出CSV格式正确，可被Python pandas直接读取
+</pre>
+<h3>openspec/specs/system-monitor.md</h3><pre class="md-source"># Spec Delta: 系统状态监控与ETL管理
+
+## Status: ADDED
+
+## User Stories
+
+US-4：作为系统使用者，我想查看数据采集和ETL管道的运行状态，以便确认数据已更新至最新交易日
+US-5：作为系统使用者，我想手动触发数据采集或ETL任务，以便在数据缺失时主动补救
+
+**旅程映射**：J4-1 → J4-2 → J4-3 → J4-4
+
+## Requirements
+
+### REQ-4.1 组件健康状态
+- 仪表盘展示各核心组件健康状态：PostgreSQL、Elasticsearch、Redis、本地LLM
+- 状态指示：绿色（正常）、黄色（警告）、红色（异常）
+- 健康检查方式：
+  - PostgreSQL：`SELECT 1` 查询响应
+  - Elasticsearch：`GET /_cluster/health` 响应
+  - Redis：`PING` 响应
+  - LLM：向Ollama API发送测试请求
+- 显示各组件内存使用量和运行时长
+
+### REQ-4.2 ETL运行日志
+- 展示最近5次ETL运行记录
+- 每条记录包含：开始时间、结束时间、采集数量、成功/失败数、耗时
+- 错误日志显示最后3条错误信息
+- 数据新鲜度标识：&quot;数据已更新至 T+1 YYYY-MM-DD&quot; 或 &quot;数据落后 X 天&quot;
+
+### REQ-4.3 手动触发采集
+- 提供&quot;手动触发采集&quot;按钮
+- 点击后弹出确认对话框，提示影响范围
+- 提交后显示任务状态：排队中 → 运行中 → 完成/失败
+- 任务完成后页面自动刷新
+
+### REQ-4.4 重新运行ETL
+- 提供&quot;重新运行ETL&quot;按钮
+- 可选择指定日期范围重新处理
+- 任务提交后显示进度指示器
+
+### REQ-4.5 单用户Token认证
+- 手动触发操作需Token认证
+- Token通过请求头 `Authorization: Bearer &lt;token&gt;` 传递
+- Token配置在 `.env` 文件中（`API_TOKEN=xxx`）
+
+## API Contract
+
+```
+GET /api/health
+Response:
+{
+  &quot;components&quot;: {
+    &quot;postgresql&quot;: { &quot;status&quot;: &quot;healthy&quot;, &quot;memory_mb&quot;: 1843, &quot;uptime_hours&quot;: 72 },
+    &quot;elasticsearch&quot;: { &quot;status&quot;: &quot;healthy&quot;, &quot;memory_mb&quot;: 3277, &quot;uptime_hours&quot;: 72 },
+    &quot;redis&quot;: { &quot;status&quot;: &quot;healthy&quot;, &quot;memory_mb&quot;: 410, &quot;uptime_hours&quot;: 72 },
+    &quot;llm&quot;: { &quot;status&quot;: &quot;healthy&quot;, &quot;memory_mb&quot;: 6144, &quot;uptime_hours&quot;: 72, &quot;avg_ms_per_item&quot;: 2100 }
+  },
+  &quot;last_etl&quot;: {
+    &quot;started_at&quot;: &quot;2026-06-12T04:50:00+08:00&quot;,
+    &quot;completed_at&quot;: &quot;2026-06-12T06:15:00+08:00&quot;,
+    &quot;stocks_collected&quot;: 300,
+    &quot;success&quot;: 298,
+    &quot;failed&quot;: 2,
+    &quot;duration_minutes&quot;: 85
+  },
+  &quot;data_freshness&quot;: {
+    &quot;last_update&quot;: &quot;2026-06-11&quot;,
+    &quot;days_behind&quot;: 1
+  }
+}
+
+POST /api/schedule/collect
+Headers: Authorization: Bearer &lt;token&gt;
+Response: { &quot;task_id&quot;: &quot;task-xxx&quot;, &quot;status&quot;: &quot;queued&quot; }
+
+POST /api/schedule/etl
+Headers: Authorization: Bearer &lt;token&gt;
+Body: { &quot;date_range&quot;: [&quot;2026-06-10&quot;, &quot;2026-06-11&quot;] }
+Response: { &quot;task_id&quot;: &quot;task-yyy&quot;, &quot;status&quot;: &quot;queued&quot; }
+
+GET /api/schedule/status/{task_id}
+Response: { &quot;task_id&quot;: &quot;task-xxx&quot;, &quot;status&quot;: &quot;running|completed|failed&quot;, &quot;progress&quot;: 65 }
+```
+
+## Acceptance Criteria
+
+1. 健康检查API响应时间&lt;2秒
+2. 组件状态指示灯颜色与实际健康状态一致
+3. ETL日志显示最近5次运行记录，时间倒序
+4. 手动触发采集需Token认证，无Token返回401
+5. 任务状态轮询间隔≤5秒
+6. 系统连续运行72小时无OOM事件
 </pre></div>
   <div class="panel" id="c4-panel"><h3>C4 Context</h3><pre class="md-source"># C4 Level 1 — 系统上下文
 
@@ -1288,7 +1960,82 @@ flowchart TB
 | ADR-002：PG+ES组合 | 事件链查询引擎（PG）、全文检索引擎（ES） |
 | ADR-004：T+1数据新鲜度 | 调度管理器（批量触发） |
 </pre></div>
-  <div class="panel" id="journey-panel"><p><em>Not generated yet.</em></p></div>
+  <div class="panel" id="journey-panel"><pre class="md-source"># 用户旅程地图 — A股全量信息检索知识库
+
+## Personas
+
+| ID | 角色 | 目标 | 痛点 |
+|----|------|------|------|
+| P1 | 个人量化投资者 | 快速检索个股历史事件，构建交易策略因子 | 信息分散在数十个平台，无法按时间线串联个股事件；Wind/iFinD年费过高 |
+| P2 | 独立研究员/分析师 | 深度挖掘某行业/概念板块的政策与公告关联 | 缺乏跨股票的批量检索能力，研报阅读效率低 |
+| P3 | 中小型私募操盘手 | 监控持仓股票舆情与资金异动，快速响应 | 盘中缺乏轻量工具，传统终端操作繁琐 |
+| P4 | ETL调度Agent（系统角色） | 定时采集数据、执行清洗、触发LLM情感分析 | 需无人值守运行，失败需自动重试与告警 |
+
+## 核心旅程
+
+### J1：查询个股事件链（P1 核心路径）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J1-1 | P1 | 触发 | 输入股票代码或名称（如&quot;贵州茅台&quot;/&quot;600519&quot;） | 自动补全匹配股票列表 | TP-搜索框 | 中性 — 希望快速定位 |
+| J1-2 | P1 | 检索 | 点击目标股票，选择时间范围（近7天/30天/自定义） | 返回按时间排序的事件链时间线 | TP-事件链时间线 | 满意 — 信息按因果顺序组织 |
+| J1-3 | P1 | 浏览 | 滚动浏览事件链，点击某条事件查看详情 | 展开事件详情：标题、摘要、来源、情感因子 | TP-事件详情面板 | 满意 — 一站式获取完整上下文 |
+| J1-4 | P1 | 筛选 | 按事件类型过滤（仅看公告/仅看舆情） | 时间线即时刷新，仅显示匹配类型 | TP-事件过滤器 | 满意 — 快速聚焦关注的事件类型 |
+| J1-5 | P1 | 完成 | 确认事件链信息满足策略研究需求 | 系统记录查询历史（本地） | TP-查询完成 | 满足 — 比传统终端效率更高 |
+
+**成功标准**：用户在30秒内找到目标股票的完整事件链，能按类型筛选并查看事件详情。
+
+### J2：全文搜索公告/研报（P1 + P2）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J2-1 | P1/P2 | 触发 | 在搜索框输入关键词（如&quot;芯片 制裁&quot;） | 返回搜索结果列表，关键词高亮 | TP-搜索结果列表 | 中性 — 期待相关性 |
+| J2-2 | P1/P2 | 筛选 | 按股票/时间/事件类型过滤结果 | 结果列表即时刷新 | TP-搜索过滤器 | 满意 — 精确控制结果范围 |
+| J2-3 | P1/P2 | 阅读 | 点击某条结果，查看公告/研报全文 | 展示原文内容，保留关键词高亮 | TP-全文查看器 | 满意 — 无需跳转外部平台 |
+| J2-4 | P1/P2 | 关联 | 查看该文档关联的个股事件链 | 侧栏展示相关股票的时间线摘要 | TP-关联推荐 | 惊喜 — 发现跨文档关联 |
+| J2-5 | P1/P2 | 完成 | 保存感兴趣的文档或导出搜索结果 | 导出为CSV/JSON，或加入书签 | TP-导出/收藏 | 满足 — 数据可用于后续分析 |
+
+**成功标准**：搜索P95延迟&lt;100ms，用户能在3次点击内找到并阅读目标文档。
+
+### J3：查看与导出因子数据（P1 量化需求）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J3-1 | P1 | 触发 | 进入&quot;因子&quot;页面，选择股票或板块 | 展示因子数据表格（日期、因子名、因子值） | TP-因子数据表格 | 中性 — 需要结构化数据 |
+| J3-2 | P1 | 筛选 | 选择因子类型（情感/动量/波动率）和时间范围 | 表格刷新，支持排序 | TP-因子过滤器 | 满意 — 快速定位目标因子 |
+| J3-3 | P1 | 可视化 | 点击&quot;图表&quot;切换至折线图/柱状图视图 | 渲染因子时间序列图表 | TP-因子图表 | 满意 — 直观观察趋势 |
+| J3-4 | P1 | 导出 | 点击&quot;导出CSV&quot;下载因子数据 | 生成CSV文件，浏览器自动下载 | TP-因子导出 | 满足 — 可直接用于ML训练 |
+
+**成功标准**：因子数据可筛选、可视化，一键导出为ML就绪的CSV格式。
+
+### J4：ETL管道状态监控（P4 系统角色 + P1 人工确认）
+
+| 旅程ID | Persona | 阶段 | 用户行为 | 系统响应 | Touchpoint | 情绪/痛点 |
+|--------|---------|------|----------|----------|------------|-----------|
+| J4-1 | P1 | 触发 | 进入&quot;系统状态&quot;页面 | 展示各组件健康状态（PG/ES/Redis/LLM）和最近采集时间 | TP-系统仪表盘 | 安心 — 系统运行正常 |
+| J4-2 | P1 | 检查 | 查看最近一次ETL运行详情 | 展示采集数量、成功率、耗时、错误日志 | TP-ETL运行日志 | 关注 — 确认数据完整性 |
+| J4-3 | P1 | 操作 | 点击&quot;手动触发采集&quot;或&quot;重新运行ETL&quot; | 系统提交任务，显示进度条 | TP-手动触发 | 掌控感 — 可主动干预 |
+| J4-4 | P1 | 完成 | 确认数据已更新至最新交易日 | 页面显示&quot;数据已更新至 T+1&quot; | TP-更新确认 | 满足 — 数据新鲜度达标 |
+
+**成功标准**：用户可实时查看系统健康状态，手动触发采集/ETL，确认数据更新。
+
+## 屏幕映射
+
+| 屏幕 | 旅程ID | 信息优先级（首屏必见） | 关联 US |
+|------|--------|------------------------|---------|
+| **S1 — 搜索仪表盘**（首页） | J1-1, J2-1 | 搜索框（最大可见性）、最近查询股票快捷入口、系统状态摘要 | US-1, US-2 |
+| **S2 — 个股事件链** | J1-2, J1-3, J1-4, J1-5 | 股票名称/代码、时间线（按时间倒序）、事件类型标签、情感因子色块 | US-1 |
+| **S3 — 搜索结果页** | J2-2, J2-3, J2-4, J2-5 | 关键词输入框、结果列表（标题+摘要+高亮）、过滤器（股票/时间/类型） | US-2 |
+| **S4 — 因子数据页** | J3-1, J3-2, J3-3, J3-4 | 股票选择器、因子表格/图表切换、导出按钮 | US-3 |
+| **S5 — 系统状态页** | J4-1, J4-2, P4 | 组件健康指示器（绿/黄/红）、最近ETL运行状态、手动触发按钮 | US-4, US-5 |
+| **S6 — 事件详情面板**（弹窗/侧栏） | J1-3, J2-3 | 事件标题、完整内容、来源链接、发布时间、情感评分 | US-1, US-2 |
+
+## 核心路径（≤3）
+
+1. **搜索 → 事件链浏览**：用户在首页输入股票代码 → 查看事件链时间线 → 筛选事件类型 → 查看详情（覆盖 J1，P1 最高频路径）
+2. **关键词搜索 → 文档阅读**：用户输入关键词 → 浏览搜索结果 → 阅读全文 → 查看关联事件链（覆盖 J2，P1+P2 通用路径）
+3. **因子查看 → 导出**：用户选择股票 → 查看因子数据 → 切换图表 → 导出CSV（覆盖 J3，P1 量化需求）
+</pre></div>
   <div class="panel" id="mvp-panel"><p><em>MVP not built yet.</em></p></div>
   <div class="panel" id="ship-panel">
     <h3>RUNBOOK</h3><p><em>Not generated yet.</em></p>
@@ -1296,7 +2043,7 @@ flowchart TB
     <h3>Ops Notes</h3><p><em>Not generated yet.</em></p>
     <h3>Growth</h3><p><em>Not generated yet.</em></p>
   </div>
-  <div class="panel" id="proto-panel"><p><em>No static prototype (02b-prototype/index.html) yet.</em></p></div>
+  <div class="panel" id="proto-panel"><iframe class="proto-frame" src="prototype/index.html" title="prototype"></iframe></div>
 
   <script>
     const tabs = document.querySelectorAll('.tab');

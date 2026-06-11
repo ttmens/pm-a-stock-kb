@@ -2,15 +2,13 @@
   "run": "pm-a-stock-kb",
   "path": "D:\\workspace\\projects\\pm-a-stock-kb",
   "pipeline_version": "5.1.0",
-  "validated_at": "2026-06-11T16:38:26.010533+00:00",
+  "validated_at": "2026-06-11T16:48:35.713331+00:00",
   "stages": {
-    "architecture": {
+    "journey": {
       "pass": true,
       "checks": [
-        "c4_context",
-        "c4_container",
-        "c4_component",
-        "design_links_c4"
+        "personas>=39",
+        "screen_map"
       ],
       "notes": ""
     }

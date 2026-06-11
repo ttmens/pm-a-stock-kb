@@ -92,3 +92,12 @@
 - [C4 Level 1 — 系统上下文](../architecture/c4-context.md)
 - [C4 Level 2 — 容器](../architecture/c4-container.md)
 - [C4 Level 3 — 组件](../architecture/c4-component.md)
+
+## 下游文档
+
+- [用户旅程地图](../03b-user-journey.md)：4个Persona + 4条核心旅程 + 屏幕映射
+- [产品需求文档](../03-prd.md)：5个用户故事 + 验收标准 + 非功能需求
+- [前端原型](../02b-prototype/)：搜索仪表盘 + 事件链 + 搜索结果 + 因子 + 系统状态
+- [OpenSpec设计](./design.md)：技术栈 + 数据模型 + 部署架构
+- [OpenSpec任务](./tasks.md)：15个垂直切片任务
+- [Spec Delta](./specs/)：event-chain-query / fulltext-search / factor-export / system-monitor

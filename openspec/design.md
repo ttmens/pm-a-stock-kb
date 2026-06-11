@@ -4,11 +4,15 @@
 
 本设计基于C4模型定义的系统架构，详细描述各容器的技术选型、数据流和组件交互。
 
-### C4架构文档链接
+### 相关文档链接
 
 - [C4 Level 1 — 系统上下文](../architecture/c4-context.md)：定义系统边界、外部角色和上下文关系
 - [C4 Level 2 — 容器](../architecture/c4-container.md)：定义9个容器及其技术栈、内存预算
 - [C4 Level 3 — 组件](../architecture/c4-component.md)：分解API网关容器的7个内部组件
+- [用户旅程地图](../03b-user-journey.md)：4个Persona + 4条核心旅程 + 6个屏幕映射
+- [产品需求文档](../03-prd.md)：5个用户故事（US-1 ~ US-5），验收标准
+- [OpenSpec任务清单](./tasks.md)：15个垂直切片任务
+- [前端原型](../02b-prototype/)：搜索仪表盘 + 事件链 + 搜索结果 + 因子 + 系统状态
 
 ## 技术栈选型
 

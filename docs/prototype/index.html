@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A股全量信息检索知识库 — MVP原型</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0f1117;
+  color: #e8eaf0;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+a { color: #4c6ef5; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Navigation */
+.nav {
+  background: #1a1d2e;
+  border-bottom: 1px solid #2a2d3e;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: #4c6ef5;
+  margin-right: 32px;
+  white-space: nowrap;
+}
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #8b8fa3;
+  border: none;
+  background: none;
+  transition: all 0.15s;
+}
+.nav-tab:hover { color: #e8eaf0; background: #2a2d3e; }
+.nav-tab.active { color: #e8eaf0; background: #4c6ef5; }
+
+/* Layout */
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* Search Dashboard (S1) */
+.hero-search {
+  text-align: center;
+  padding: 60px 0 40px;
+}
+.hero-search h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.hero-search p { color: #8b8fa3; margin-bottom: 32px; font-size: 15px; }
+.search-box {
+  display: flex;
+  max-width: 640px;
+  margin: 0 auto 24px;
+  border: 2px solid #2a2d3e;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.search-box:focus-within { border-color: #4c6ef5; }
+.search-input {
+  flex: 1;
+  padding: 14px 18px;
+  font-size: 16px;
+  background: transparent;
+  border: none;
+  color: #e8eaf0;
+  outline: none;
+}
+.search-input::placeholder { color: #5a5d6e; }
+.search-btn {
+  padding: 14px 28px;
+  background: #4c6ef5;
+  color: #fff;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.search-btn:hover { background: #3b5de7; }
+.search-hints {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hint-tag {
+  padding: 6px 14px;
+  background: #1a1d2e;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #8b8fa3;
+  cursor: pointer;
+  border: 1px solid #2a2d3e;
+  transition: all 0.15s;
+}
+.hint-tag:hover { color: #4c6ef5; border-color: #4c6ef5; }
+
+/* Quick Access */
+.quick-access {
+  margin-top: 48px;
+  padding: 24px;
+  background: #1a1d2e;
+  border-radius: 10px;
+  border: 1px solid #2a2d3e;
+}
+.quick-access h3 { font-size: 15px; color: #8b8fa3; margin-bottom: 16px; font-weight: 500; }
+.quick-stocks { display: flex; gap: 12px; flex-wrap: wrap; }
+.quick-stock {
+  padding: 10px 18px;
+  background: #0f1117;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #2a2d3e;
+  transition: all 0.15s;
+  min-width: 160px;
+}
+.quick-stock:hover { border-color: #4c6ef5; }
+.quick-stock .name { font-size: 14px; font-weight: 600; }
+.quick-stock .code { font-size: 12px; color: #8b8fa3; font-family: "SF Mono", "Consolas", monospace; }
+
+/* System Status Summary on Dashboard */
+.status-summary {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.status-card {
+  padding: 16px;
+  background: #0f1117;
+  border-radius: 8px;
+  border: 1px solid #2a2d3e;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.green { background: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+.status-dot.yellow { background: #f39c12; box-shadow: 0 0 6px #f39c12; }
+.status-dot.red { background: #e74c3c; box-shadow: 0 0 6px #e74c3c; }
+.status-label { font-size: 13px; color: #8b8fa3; }
+.status-value { font-size: 14px; font-weight: 600; }
+
+/* Event Chain (S2) */
+.event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.event-header h2 { font-size: 22px; }
+.event-header .stock-code {
+  font-family: "SF Mono", "Consolas", monospace;
+  color: #4c6ef5;
+  font-size: 14px;
+}
+.time-range-selector { display: flex; gap: 4px; }
+.time-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #2a2d3e;
+  background: #1a1d2e;
+  color: #8b8fa3;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.time-btn:hover { color: #e8eaf0; border-color: #4c6ef5; }
+.time-btn.active { color: #e8eaf0; background: #4c6ef5; border-color: #4c6ef5; }
+
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-tag {
+  padding: 5px 12px;
+  border-radius: 4px;
+  border: 1px solid #2a2d3e;
+  background: transparent;
+  color: #8b8fa3;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-tag:hover { color: #e8eaf0; }
+.filter-tag.active { background: #2a2d3e; color: #e8eaf0; border-color: #4c6ef5; }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #2a2d3e;
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #1a1d2e;
+  border-radius: 8px;
+  border: 1px solid #2a2d3e;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.timeline-item:hover { border-color: #4c6ef5; }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #4c6ef5;
+  background: #0f1117;
+}
+.timeline-item .time { font-size: 12px; color: #8b8fa3; margin-bottom: 4px; font-family: "SF Mono", "Consolas", monospace; }
+.timeline-item .title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.timeline-item .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.type-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.type-badge.announcement { background: #2a4a7f; color: #6ea8fe; }
+.type-badge.financial { background: #2a6f4a; color: #6ee7a0; }
+.type-badge.capital { background: #6f2a6f; color: #d66fd6; }
+.type-badge.social { background: #6f5a2a; color: #e7c66e; }
+.sentiment-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.sentiment-badge.positive { background: #1a3a2a; color: #2ecc71; }
+.sentiment-badge.negative { background: #3a1a1a; color: #e74c3c; }
+.sentiment-badge.neutral { background: #2a2a2a; color: #95a5a6; }
+
+/* Search Results (S3) */
+.search-results-header {
+  margin-bottom: 20px;
+}
+.search-results-header h2 { font-size: 20px; margin-bottom: 4px; }
+.search-results-header .result-count { color: #8b8fa3; font-size: 14px; }
+.result-item {
+  padding: 16px;
+  background: #1a1d2e;
+  border-radius: 8px;
+  border: 1px solid #2a2d3e;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.result-item:hover { border-color: #4c6ef5; }
+.result-item .r-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.result-item .r-title mark { background: #4c6ef533; color: #4c6ef5; border-radius: 2px; padding: 0 2px; }
+.result-item .r-snippet { font-size: 13px; color: #8b8fa3; margin-bottom: 8px; line-height: 1.5; }
+.result-item .r-snippet mark { background: #4c6ef533; color: #4c6ef5; border-radius: 2px; padding: 0 2px; }
+.result-item .r-meta { display: flex; gap: 12px; font-size: 12px; color: #5a5d6e; }
+
+/* Factor Data (S4) */
+.factor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.factor-header h2 { font-size: 22px; }
+.view-toggle { display: flex; gap: 4px; }
+.view-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid #2a2d3e;
+  background: #1a1d2e;
+  color: #8b8fa3;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.view-btn:hover { color: #e8eaf0; }
+.view-btn.active { background: #4c6ef5; color: #fff; border-color: #4c6ef5; }
+.export-btn {
+  padding: 8px 20px;
+  background: #2ecc71;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.export-btn:hover { background: #27ae60; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: #1a1d2e;
+  border-bottom: 2px solid #2a2d3e;
+  color: #8b8fa3;
+  font-weight: 500;
+  font-size: 13px;
+}
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #1e2130;
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 13px;
+}
+.data-table tr:hover td { background: #1a1d2e; }
+
+.chart-container {
+  background: #1a1d2e;
+  border-radius: 8px;
+  border: 1px solid #2a2d3e;
+  padding: 24px;
+  margin-top: 16px;
+}
+.chart-container h3 { font-size: 15px; margin-bottom: 16px; color: #8b8fa3; font-weight: 500; }
+.chart-svg { width: 100%; height: 200px; }
+
+/* System Status (S5) */
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.sys-card {
+  padding: 20px;
+  background: #1a1d2e;
+  border-radius: 8px;
+  border: 1px solid #2a2d3e;
+}
+.sys-card h3 { font-size: 14px; color: #8b8fa3; margin-bottom: 8px; font-weight: 500; }
+.sys-card .sys-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sys-card .sys-name { font-size: 18px; font-weight: 700; }
+.sys-card .sys-detail { font-size: 13px; color: #5a5d6e; }
+
+.etl-log {
+  background: #1a1d2e;
+  border-radius: 8px;
+  border: 1px solid #2a2d3e;
+  padding: 20px;
+}
+.etl-log h3 { font-size: 15px; margin-bottom: 16px; }
+.log-entry {
+  padding: 8px 12px;
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 12px;
+  border-left: 3px solid #2a2d3e;
+  margin-bottom: 4px;
+  background: #0f1117;
+  border-radius: 0 4px 4px 0;
+}
+.log-entry.success { border-left-color: #2ecc71; }
+.log-entry.error { border-left-color: #e74c3c; }
+.log-entry.info { border-left-color: #4c6ef5; }
+
+.trigger-btn {
+  padding: 8px 20px;
+  background: #4c6ef5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background 0.15s;
+}
+.trigger-btn:hover { background: #3b5de7; }
+
+/* Modal (S6) */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: #1a1d2e;
+  border-radius: 12px;
+  border: 1px solid #2a2d3e;
+  max-width: 720px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 28px;
+}
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  color: #8b8fa3;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover { color: #e8eaf0; }
+.modal h2 { font-size: 20px; margin-bottom: 12px; margin-right: 32px; }
+.modal .m-meta { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.modal .m-content { font-size: 14px; line-height: 1.8; color: #c0c3d0; }
+.modal .m-source { margin-top: 16px; font-size: 12px; color: #5a5d6e; }
+.related-events { margin-top: 20px; padding-top: 16px; border-top: 1px solid #2a2d3e; }
+.related-events h4 { font-size: 14px; color: #8b8fa3; margin-bottom: 12px; font-weight: 500; }
+.related-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #1e2130;
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav { padding: 0 12px; }
+  .nav-brand { font-size: 14px; margin-right: 16px; }
+  .nav-tab { padding: 6px 10px; font-size: 13px; }
+  .container { padding: 16px; }
+  .hero-search h1 { font-size: 22px; }
+  .search-box { flex-direction: column; }
+  .search-btn { border-radius: 0; }
+  .event-header { flex-direction: column; align-items: flex-start; }
+  .system-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-brand">A股知识库</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchScreen('dashboard')">搜索</button>
+    <button class="nav-tab" onclick="switchScreen('events')">事件链</button>
+    <button class="nav-tab" onclick="switchScreen('search')">搜索结果</button>
+    <button class="nav-tab" onclick="switchScreen('factors')">因子</button>
+    <button class="nav-tab" onclick="switchScreen('system')">系统</button>
+  </div>
+</nav>
+
+<!-- S1: Search Dashboard -->
+<div id="screen-dashboard" class="screen active">
+  <div class="container">
+    <div class="hero-search">
+      <h1>A股全量信息检索</h1>
+      <p>输入股票代码、名称或关键词，快速检索公告、研报、舆情与事件链</p>
+      <div class="search-box">
+        <input class="search-input" id="main-search" type="text" placeholder="输入股票代码/名称/关键词，如 600519 或 芯片制裁" />
+        <button class="search-btn" onclick="doSearch()">搜索</button>
+      </div>
+      <div class="search-hints">
+        <span class="hint-tag" onclick="quickSearch('600519')">600519 贵州茅台</span>
+        <span class="hint-tag" onclick="quickSearch('000001')">000001 平安银行</span>
+        <span class="hint-tag" onclick="quickSearch('芯片')">芯片</span>
+        <span class="hint-tag" onclick="quickSearch('新能源')">新能源</span>
+        <span class="hint-tag" onclick="quickSearch('芯片 制裁')">芯片 制裁</span>
+      </div>
+    </div>
+
+    <div class="quick-access">
+      <h3>最近查询</h3>
+      <div class="quick-stocks">
+        <div class="quick-stock" onclick="showEventChain('600519','贵州茅台')">
+          <div class="name">贵州茅台</div>
+          <div class="code">600519.SH</div>
+        </div>
+        <div class="quick-stock" onclick="showEventChain('000858','五粮液')">
+          <div class="name">五粮液</div>
+          <div class="code">000858.SZ</div>
+        </div>
+        <div class="quick-stock" onclick="showEventChain('601318','中国平安')">
+          <div class="name">中国平安</div>
+          <div class="code">601318.SH</div>
+        </div>
+        <div class="quick-stock" onclick="showEventChain('000001','平安银行')">
+          <div class="name">平安银行</div>
+          <div class="code">000001.SZ</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-summary">
+      <div class="status-card">
+        <div class="status-dot green"></div>
+        <div><div class="status-label">数据更新至</div><div class="status-value">T+1 2026-06-11</div></div>
+      </div>
+      <div class="status-card">
+        <div class="status-dot green"></div>
+        <div><div class="status-label">覆盖股票</div><div class="status-value">沪深300 / 300只</div></div>
+      </div>
+      <div class="status-card">
+        <div class="status-dot green"></div>
+        <div><div class="status-label">事件总数</div><div class="status-value">128,453条</div></div>
+      </div>
+      <div class="status-card">
+        <div class="status-dot green"></div>
+        <div><div class="status-label">系统状态</div><div class="status-value">全部正常</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: Event Chain -->
+<div id="screen-events" class="screen">
+  <div class="container">
+    <div class="event-header">
+      <div>
+        <h2 id="event-stock-name">贵州茅台</h2>
+        <span class="stock-code" id="event-stock-code">600519.SH</span>
+      </div>
+      <div class="time-range-selector">
+        <button class="time-btn" onclick="setTimeRange(this)">7天</button>
+        <button class="time-btn active" onclick="setTimeRange(this)">30天</button>
+        <button class="time-btn" onclick="setTimeRange(this)">90天</button>
+        <button class="time-btn" onclick="setTimeRange(this)">自定义</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-tag active" onclick="filterType(this, 'all')">全部</button>
+      <button class="filter-tag" onclick="filterType(this, 'announcement')">公告</button>
+      <button class="filter-tag" onclick="filterType(this, 'financial')">财报</button>
+      <button class="filter-tag" onclick="filterType(this, 'capital')">资金</button>
+      <button class="filter-tag" onclick="filterType(this, 'social')">舆情</button>
+    </div>
+    <div class="timeline" id="event-timeline">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- S3: Search Results -->
+<div id="screen-search" class="screen">
+  <div class="container">
+    <div class="search-results-header">
+      <h2>搜索结果：<span id="search-keyword">芯片 制裁</span></h2>
+      <div class="result-count">找到 <strong>24</strong> 条结果（P95延迟: 67ms）</div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-tag active" onclick="filterResults(this,'all')">全部</button>
+      <button class="filter-tag" onclick="filterResults(this,'announcement')">公告</button>
+      <button class="filter-tag" onclick="filterResults(this,'report')">研报</button>
+      <button class="filter-tag" onclick="filterResults(this,'social')">舆情</button>
+    </div>
+    <div id="search-results">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- S4: Factor Data -->
+<div id="screen-factors" class="screen">
+  <div class="container">
+    <div class="factor-header">
+      <div>
+        <h2>因子数据 — 贵州茅台 <span class="stock-code">600519.SH</span></h2>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div class="view-toggle">
+          <button class="view-btn active" onclick="toggleView(this,'table')">表格</button>
+          <button class="view-btn" onclick="toggleView(this,'chart')">图表</button>
+        </div>
+        <button class="export-btn" onclick="exportFactors()">导出CSV</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-tag active" onclick="filterFactor(this,'all')">全部因子</button>
+      <button class="filter-tag" onclick="filterFactor(this,'sentiment')">情感因子</button>
+      <button class="filter-tag" onclick="filterFactor(this,'momentum')">动量因子</button>
+      <button class="filter-tag" onclick="filterFactor(this,'volatility')">波动率因子</button>
+    </div>
+    <div id="factor-table-view">
+      <table class="data-table">
+        <thead><tr><th>日期</th><th>因子名称</th><th>因子值</th><th>来源</th></tr></thead>
+        <tbody id="factor-tbody">
+          <!-- Filled by JS -->
+        </tbody>
+      </table>
+    </div>
+    <div id="factor-chart-view" style="display:none;">
+      <div class="chart-container">
+        <h3>情感因子时间序列（近30天）</h3>
+        <svg class="chart-svg" id="factor-chart" viewBox="0 0 800 200"></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S5: System Status -->
+<div id="screen-system" class="screen">
+  <div class="container">
+    <h2 style="margin-bottom:20px;">系统状态</h2>
+    <div class="system-grid">
+      <div class="sys-card">
+        <h3>结构化存储</h3>
+        <div class="sys-status"><div class="status-dot green"></div><span class="sys-name">PostgreSQL</span></div>
+        <div class="sys-detail">Silver层 · 内存 1.8/2GB · 运行 72h</div>
+      </div>
+      <div class="sys-card">
+        <h3>全文检索</h3>
+        <div class="sys-status"><div class="status-dot green"></div><span class="sys-name">Elasticsearch</span></div>
+        <div class="sys-detail">Gold层 · 内存 3.2/4GB · 索引 128K文档</div>
+      </div>
+      <div class="sys-card">
+        <h3>缓存/队列</h3>
+        <div class="sys-status"><div class="status-dot green"></div><span class="sys-name">Redis</span></div>
+        <div class="sys-detail">内存 0.4/1GB · 缓存命中率 87%</div>
+      </div>
+      <div class="sys-card">
+        <h3>AI推理</h3>
+        <div class="sys-status"><div class="status-dot green"></div><span class="sys-name">Qwen2.5-7B</span></div>
+        <div class="sys-detail">GGUF 4-bit · 待处理队列: 0 · 平均 2.1秒/条</div>
+      </div>
+    </div>
+
+    <div class="etl-log">
+      <h3>最近ETL运行日志</h3>
+      <div class="log-entry success">[2026-06-12 06:15] ETL完成 — 采集300只股票, 成功298, 失败2, 耗时 1h23m</div>
+      <div class="log-entry info">[2026-06-12 04:52] LLM情感分析完成 — 处理1,247条, 平均2.1秒/条</div>
+      <div class="log-entry info">[2026-06-12 04:50] ETL开始 — 数据源: AKShare + Tushare + 爬虫</div>
+      <div class="log-entry success">[2026-06-11 18:00] 数据采集器启动 — 目标: 沪深300成分股</div>
+      <div class="log-entry error">[2026-06-11 06:18] ETL警告 — 2只股票AKShare接口超时, 已标记重试</div>
+    </div>
+
+    <button class="trigger-btn" onclick="triggerETL()">手动触发采集</button>
+    <button class="trigger-btn" style="background:#6f5a2a;margin-left:12px;" onclick="triggerReETL()">重新运行ETL</button>
+  </div>
+</div>
+
+<!-- S6: Event Detail Modal -->
+<div class="modal-overlay" id="event-modal" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModalDirect()">&times;</button>
+    <h2 id="modal-title">事件标题</h2>
+    <div class="m-meta" id="modal-meta"></div>
+    <div class="m-content" id="modal-content"></div>
+    <div class="m-source" id="modal-source"></div>
+    <div class="related-events">
+      <h4>关联事件</h4>
+      <div id="modal-related"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// === Screen Navigation ===
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// === Mock Data ===
+const events = [
+  { time: '2026-06-11 15:30', type: 'announcement', typeLabel: '公告', title: '贵州茅台关于2025年度利润分配实施公告', sentiment: 'positive', sentimentLabel: '利好 +0.72', content: '公司2025年度利润分配方案为：每10股派发现金红利308.76元（含税），共计派发现金红利387.89亿元。股权登记日：2026年6月18日，除权除息日：2026年6月19日。' },
+  { time: '2026-06-10 09:45', type: 'capital', typeLabel: '资金', title: '北向资金连续3日净买入贵州茅台', sentiment: 'positive', sentimentLabel: '利好 +0.58', content: '北向资金6月8-10日累计净买入贵州茅台12.3亿元，占总成交额4.2%。机构分析认为白酒板块估值已至合理区间。' },
+  { time: '2026-06-08 14:20', type: 'social', typeLabel: '舆情', title: '多家券商研报上调茅台目标价', sentiment: 'positive', sentimentLabel: '利好 +0.65', content: '中信证券、中金公司分别将贵州茅台目标价上调至2200元和2150元，维持"买入"评级。核心逻辑：批价企稳回升+渠道库存健康+分红率提升。' },
+  { time: '2026-06-05 10:00', type: 'financial', typeLabel: '财报', title: '贵州茅台2026年Q1财报：营收同比增长15.2%', sentiment: 'positive', sentimentLabel: '利好 +0.81', content: 'Q1实现营业收入387.5亿元，同比增长15.2%；归母净利润198.3亿元，同比增长16.8%。毛利率91.2%，同比提升0.5个百分点。' },
+  { time: '2026-06-03 16:40', type: 'announcement', typeLabel: '公告', title: '贵州茅台关于股东增持计划进展公告', sentiment: 'neutral', sentimentLabel: '中性 0.05', content: '公司控股股东茅台集团于2026年5月28日至6月2日期间，通过二级市场增持公司股份150万股，增持金额约2.85亿元。' },
+  { time: '2026-05-30 11:15', type: 'social', typeLabel: '舆情', title: '茅台批价小幅回调引发市场关注', sentiment: 'negative', sentimentLabel: '利空 -0.42', content: '飞天茅台散瓶批价跌至2450元，较月初下跌约80元。市场分析认为系端午节前经销商回款压力导致短期抛压，不改变长期趋势。' },
+  { time: '2026-05-28 09:00', type: 'capital', typeLabel: '资金', title: '贵州茅台获融资买入5.2亿元', sentiment: 'positive', sentimentLabel: '利好 +0.35', content: '两融数据显示，5月27日贵州茅台获融资买入5.2亿元，融资余额达89.3亿元，占流通市值0.71%。' },
+  { time: '2026-05-25 14:00', type: 'announcement', typeLabel: '公告', title: '贵州茅台关于召开2025年度股东大会的通知', sentiment: 'neutral', sentimentLabel: '中性 0.00', content: '公司定于2026年6月20日召开2025年度股东大会，审议2025年度报告、利润分配方案、董事会工作报告等议案。' },
+];
+
+const searchResults = [
+  { title: '工信部：加快<mark>芯片</mark>产业自主可控步伐，应对国际<mark>制裁</mark>风险', snippet: '工信部今日发布指导意见，要求加快半导体产业链国产替代进程，降低对外部技术的依赖度。文件提到在...', stock: '多只半导体个股', time: '2026-06-11', type: 'announcement' },
+  { title: '中信建投：<mark>芯片</mark><mark>制裁</mark>升级下的半导体投资机会', snippet: '报告分析认为，随着出口管制的持续升级，国产替代逻辑进一步强化。重点关注设备、材料和EDA工具链...', stock: '中芯国际/北方华创', time: '2026-06-10', type: 'report' },
+  { title: '美国商务部更新<mark>芯片</mark>出口管制清单，新增12家中国实体', snippet: '美国商务部工业与安全局（BIS）宣布更新实体清单，新增12家中国半导体相关企业，限制其获取先进...', stock: '行业影响', time: '2026-06-09', type: 'announcement' },
+  { title: '社交媒体热议：<mark>芯片制裁</mark>对A股科技板块的冲击', snippet: '雪球和淘股吧投资者普遍认为短期利空已消化，长期利好国产替代。部分投资者开始布局半导体设备和...', stock: '市场舆情', time: '2026-06-08', type: 'social' },
+  { title: '华创证券：半导体设备Q2订单环比增长40%，<mark>制裁</mark>加速国产替代', snippet: '数据显示，北方华创、中微公司等设备厂商Q2新增订单环比增长约40%，验证了国产替代加速的逻辑...', stock: '北方华创/中微公司', time: '2026-06-07', type: 'report' },
+];
+
+const factorData = [
+  { date: '2026-06-11', name: 'sentiment', label: '情感因子', value: 0.72, source: 'LLM' },
+  { date: '2026-06-10', name: 'sentiment', label: '情感因子', value: 0.58, source: 'LLM' },
+  { date: '2026-06-09', name: 'sentiment', label: '情感因子', value: 0.31, source: 'LLM' },
+  { date: '2026-06-08', name: 'sentiment', label: '情感因子', value: 0.65, source: 'LLM' },
+  { date: '2026-06-07', name: 'sentiment', label: '情感因子', value: 0.42, source: 'LLM' },
+  { date: '2026-06-06', name: 'sentiment', label: '情感因子', value: 0.18, source: 'LLM' },
+  { date: '2026-06-05', name: 'sentiment', label: '情感因子', value: 0.81, source: 'LLM' },
+  { date: '2026-06-04', name: 'sentiment', label: '情感因子', value: 0.55, source: 'LLM' },
+  { date: '2026-06-03', name: 'sentiment', label: '情感因子', value: 0.05, source: 'LLM' },
+  { date: '2026-06-02', name: 'sentiment', label: '情感因子', value: -0.12, source: 'LLM' },
+  { date: '2026-06-01', name: 'sentiment', label: '情感因子', value: 0.23, source: 'LLM' },
+  { date: '2026-05-31', name: 'sentiment', label: '情感因子', value: -0.08, source: 'LLM' },
+  { date: '2026-05-30', name: 'sentiment', label: '情感因子', value: -0.42, source: 'LLM' },
+  { date: '2026-05-30', name: 'momentum', label: '动量因子', value: 0.035, source: '计算' },
+  { date: '2026-05-30', name: 'volatility', label: '波动率因子', value: 0.021, source: '计算' },
+];
+
+// === Render Functions ===
+function renderTimeline(filterType) {
+  const tl = document.getElementById('event-timeline');
+  const filtered = filterType === 'all' ? events : events.filter(e => e.type === filterType);
+  tl.innerHTML = filtered.map(e => `
+    <div class="timeline-item" onclick="showEventDetail('${e.time}','${e.title}','${e.typeLabel}','${e.sentimentLabel}','${e.content}')">
+      <div class="time">${e.time}</div>
+      <div class="title">${e.title}</div>
+      <div class="meta">
+        <span class="type-badge ${e.type}">${e.typeLabel}</span>
+        <span class="sentiment-badge ${e.sentiment}">${e.sentimentLabel}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSearchResults(filterType) {
+  const container = document.getElementById('search-results');
+  const filtered = filterType === 'all' ? searchResults : searchResults.filter(r => r.type === filterType);
+  container.innerHTML = filtered.map((r, i) => `
+    <div class="result-item" onclick="showSearchDetail(${i})">
+      <div class="r-title">${r.title}</div>
+      <div class="r-snippet">${r.snippet}</div>
+      <div class="r-meta">
+        <span>${r.stock}</span>
+        <span>${r.time}</span>
+        <span class="type-badge ${r.type === 'report' ? 'financial' : r.type}">${r.type === 'report' ? '研报' : r.type === 'social' ? '舆情' : '公告'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderFactorTable(filterType) {
+  const tbody = document.getElementById('factor-tbody');
+  const filtered = filterType === 'all' ? factorData : factorData.filter(f => f.name === filterType);
+  tbody.innerHTML = filtered.map(f => `
+    <tr>
+      <td>${f.date}</td>
+      <td>${f.label}</td>
+      <td style="color:${f.value >= 0 ? '#2ecc71' : '#e74c3c'}">${f.value >= 0 ? '+' : ''}${f.value.toFixed(2)}</td>
+      <td>${f.source}</td>
+    </tr>
+  `).join('');
+}
+
+function renderFactorChart() {
+  const svg = document.getElementById('factor-chart');
+  const sentimentData = factorData.filter(f => f.name === 'sentiment').slice().reverse();
+  const w = 800, h = 200, pad = 40;
+  const chartW = w - pad * 2, chartH = h - pad * 2;
+  const maxV = 1, minV = -0.5;
+  const points = sentimentData.map((d, i) => {
+    const x = pad + (i / (sentimentData.length - 1)) * chartW;
+    const y = pad + chartH - ((d.value - minV) / (maxV - minV)) * chartH;
+    return [x, y];
+  });
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ');
+  const areaPath = linePath + ` L${points[points.length-1][0]},${pad + chartH} L${points[0][0]},${pad + chartH} Z`;
+  
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4c6ef5" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="#4c6ef5" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    <line x1="${pad}" y1="${pad + chartH}" x2="${w - pad}" y2="${pad + chartH}" stroke="#2a2d3e" stroke-width="1"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${pad + chartH}" stroke="#2a2d3e" stroke-width="1"/>
+    <line x1="${pad}" y1="${pad + chartH - (0 - minV)/(maxV - minV)*chartH}" x2="${w-pad}" y2="${pad + chartH - (0 - minV)/(maxV - minV)*chartH}" stroke="#2a2d3e" stroke-width="0.5" stroke-dasharray="4,4"/>
+    <text x="${w - pad + 5}" y="${pad + chartH - (0 - minV)/(maxV - minV)*chartH + 4}" fill="#5a5d6e" font-size="11">0</text>
+    <path d="${areaPath}" fill="url(#areaGrad)"/>
+    <path d="${linePath}" fill="none" stroke="#4c6ef5" stroke-width="2"/>
+    ${points.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#4c6ef5" stroke="#0f1117" stroke-width="2"/>`).join('')}
+    ${sentimentData.map((d, i) => {
+      const x = pad + (i / (sentimentData.length - 1)) * chartW;
+      return i % 3 === 0 ? `<text x="${x}" y="${h - 5}" fill="#5a5d6e" font-size="10" text-anchor="middle">${d.date.slice(5)}</text>` : '';
+    }).join('')}
+  `;
+}
+
+// === Event Handlers ===
+function doSearch() {
+  const q = document.getElementById('main-search').value.trim();
+  if (q) {
+    document.getElementById('search-keyword').textContent = q;
+    switchTab('search');
+  }
+}
+
+function quickSearch(q) {
+  document.getElementById('main-search').value = q;
+  if (/^\d{6}$/.test(q)) {
+    const names = {'600519':'贵州茅台','000001':'平安银行','000858':'五粮液','601318':'中国平安'};
+    showEventChain(q, names[q] || q);
+  } else {
+    doSearch();
+  }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.textContent.includes(name === 'dashboard' ? '搜索' : name === 'events' ? '事件链' : name === 'search' ? '搜索' : name === 'factors' ? '因子' : '系统')) {
+      t.classList.add('active');
+    }
+  });
+}
+
+function showEventChain(code, name) {
+  document.getElementById('event-stock-name').textContent = name;
+  document.getElementById('event-stock-code').textContent = code + (code.startsWith('6') ? '.SH' : '.SZ');
+  renderTimeline('all');
+  switchTab('events');
+}
+
+function setTimeRange(btn) {
+  btn.parentElement.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function filterType(btn, type) {
+  btn.parentElement.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTimeline(type);
+}
+
+function filterResults(btn, type) {
+  btn.parentElement.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSearchResults(type);
+}
+
+function filterFactor(btn, type) {
+  btn.parentElement.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFactorTable(type);
+}
+
+function toggleView(btn, view) {
+  btn.parentElement.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('factor-table-view').style.display = view === 'table' ? 'block' : 'none';
+  document.getElementById('factor-chart-view').style.display = view === 'chart' ? 'block' : 'none';
+  if (view === 'chart') renderFactorChart();
+}
+
+function exportFactors() {
+  let csv = 'stock_code,factor_date,factor_name,factor_value\n';
+  factorData.forEach(f => { csv += `600519.SH,${f.date},${f.name},${f.value}\n`; });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = '600519_factors.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showEventDetail(time, title, type, sentiment, content) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-meta').innerHTML = `
+    <span class="type-badge ${events.find(e=>e.title===title)?.type || 'announcement'}">${type}</span>
+    <span class="sentiment-badge ${events.find(e=>e.title===title)?.sentiment || 'neutral'}">${sentiment}</span>
+    <span style="color:#5a5d6e;font-size:12px;font-family:monospace;">${time}</span>
+  `;
+  document.getElementById('modal-content').textContent = content;
+  document.getElementById('modal-source').textContent = '来源：AKShare / 上交所官网 | 原始数据ID: bronze/akshare/daily/2026-06-11/600519.SH.json';
+  document.getElementById('modal-related').innerHTML = `
+    <div class="related-item">2026-06-05 · Q1财报营收增长15.2% · <span style="color:#2ecc71">利好 +0.81</span></div>
+    <div class="related-item">2026-06-03 · 茅台集团增持150万股 · <span style="color:#95a5a6">中性 0.00</span></div>
+    <div class="related-item">2026-05-28 · 融资买入5.2亿元 · <span style="color:#2ecc71">利好 +0.35</span></div>
+  `;
+  document.getElementById('event-modal').classList.add('active');
+}
+
+function showSearchDetail(idx) {
+  const r = searchResults[idx];
+  document.getElementById('modal-title').textContent = r.title.replace(/<[^>]*>/g, '');
+  document.getElementById('modal-meta').innerHTML = `
+    <span style="color:#5a5d6e;font-size:12px;">${r.stock}</span>
+    <span style="color:#5a5d6e;font-size:12px;">${r.time}</span>
+    <span class="type-badge ${r.type === 'report' ? 'financial' : r.type}">${r.type === 'report' ? '研报' : r.type === 'social' ? '舆情' : '公告'}</span>
+  `;
+  document.getElementById('modal-content').textContent = r.snippet.replace(/<[^>]*>/g, '') + '\n\n（完整内容需要接入ES全文索引后展示）';
+  document.getElementById('modal-source').textContent = '来源：ES Gold层索引 | 相关股票事件链见侧栏';
+  document.getElementById('modal-related').innerHTML = `
+    <div class="related-item">关联股票：${r.stock}</div>
+    <div class="related-item">情感因子：待分析（LLM批量处理中）</div>
+  `;
+  document.getElementById('event-modal').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('event-modal')) {
+    document.getElementById('event-modal').classList.remove('active');
+  }
+}
+function closeModalDirect() {
+  document.getElementById('event-modal').classList.remove('active');
+}
+
+function triggerETL() {
+  alert('采集任务已提交，预计耗时1-2小时。完成后页面将自动刷新。');
+}
+function triggerReETL() {
+  alert('ETL重新运行任务已提交。可选择指定日期范围进行重新处理。');
+}
+
+// === Init ===
+renderTimeline('all');
+renderSearchResults('all');
+renderFactorTable('all');
+</script>
+</body>
+</html>
