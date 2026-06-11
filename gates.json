@@ -1,0 +1,18 @@
+{
+  "run": "pm-a-stock-kb",
+  "path": "D:\\workspace\\projects\\pm-a-stock-kb",
+  "pipeline_version": "5.1.0",
+  "validated_at": "2026-06-11T16:26:56.964790+00:00",
+  "stages": {
+    "align": {
+      "pass": true,
+      "checks": [
+        "glossary_terms>=10",
+        "no_tbd",
+        "context_exists"
+      ],
+      "notes": ""
+    }
+  },
+  "overall": "pass"
+}

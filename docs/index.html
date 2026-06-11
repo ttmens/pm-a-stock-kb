@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PM Pipeline — a-stock-kb</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#0f1419; color:#e7ecf3; }
+    body { margin:0; padding:16px; max-width:960px; margin-inline:auto; }
+    h1 { font-size:1.4rem; margin-bottom:8px; }
+    .meta { color:#9aa7b5; font-size:.9rem; margin-bottom:16px; }
+    .meta a { color:#6cb6ff; }
+    .badges { margin:12px 0 20px; display:flex; flex-wrap:wrap; gap:8px; }
+    .badge { padding:4px 10px; border-radius:999px; font-size:.8rem; background:#243044; }
+    .badge.pass { background:#1f4d2e; color:#9be7b0; }
+    .badge.fail { background:#5a2323; color:#ffb4b4; }
+    .badge.overall.pass { background:#2d4a7a; }
+    .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .tab { background:#1a2332; color:#dce6f2; border:1px solid #2b3b52; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    .tab.active { background:#2d4a7a; border-color:#4d7ec2; }
+    .panel { display:none; background:#151d29; border:1px solid #2b3b52; border-radius:12px; padding:16px; }
+    .panel.active { display:block; }
+    .md-render { line-height:1.55; }
+    .md-render h2 { margin-top:1.2em; }
+    pre.md-source { display:none; }
+    .proto-frame { width:100%; min-height:420px; border:1px solid #2b3b52; border-radius:8px; background:#fff; }
+    section { margin-top:24px; }
+  </style>
+</head>
+<body>
+  <h1>PM Idea → MVP — a-stock-kb</h1>
+  <div class="meta">
+    Repo: <a href="https://github.com/ttmens/pm-a-stock-kb">https://github.com/ttmens/pm-a-stock-kb</a> ·
+    Pages: <a href="https://ttmens.github.io/pm-a-stock-kb/">https://ttmens.github.io/pm-a-stock-kb/</a><br/>
+    Commit: 6df9f8a · Built: 2026-06-11 16:26 UTC
+  </div>
+  <div class="badges"><span class="badge pass">align</span> <span class="badge overall pass">overall: pass</span></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab" data-tab="RUN-md">运行说明</button><button class="tab" data-tab="00-brief-md">Brief</button><button class="tab" data-tab="CONTEXT-md">Context</button><button class="tab" data-tab="decisions-md">Decisions</button><button class="tab" data-tab="01-research-md">Research</button><button class="tab" data-tab="01b-benchmark-md">Benchmark</button><button class="tab" data-tab="02-analysis-md">Analysis</button><button class="tab" data-tab="03b-user-journey-md">UserJourney</button><button class="tab" data-tab="03-prd-md">PRD</button><button class="tab" data-tab="05-retro-md">Retro</button><button class="tab" data-tab="06-refine-retro-md">RefineRetro</button><button class="tab" data-tab="RUNBOOK-md">Ship</button><button class="tab" data-tab="07-ops-notes-md">Operate</button><button class="tab" data-tab="06-growth-md">Grow</button><button class="tab" data-tab="docs/ui-acceptance-report-md">UIAcceptance</button>
+    <button class="tab" data-tab="openspec-panel">OpenSpec</button>
+    <button class="tab" data-tab="c4-panel">C4</button>
+    <button class="tab" data-tab="journey-panel">Journey</button>
+    <button class="tab" data-tab="mvp-panel">MVP</button>
+    <button class="tab" data-tab="proto-panel">Prototype</button>
+  </div>
+
+  <div class="panel" id="RUN-md"><pre class="md-source"># 本次运行说明
+
+| 项 | 值 |
+|----|-----|
+| 类型 | 真实产品想法 |
+| 标题 | Idea: A股全量信息检索知识库 |
+| Slug | `a-stock-kb` |
+| 本地目录 | `D:/workspace/projects/pm-a-stock-kb` |
+| GitHub | https://github.com/ttmens/pm-a-stock-kb |
+| 产物页 | https://ttmens.github.io/pm-a-stock-kb/ |
+
+## 九阶段清单（v5.1）
+
+- [ ] Grill 对齐想法 — a-stock-kb
+- [ ] 深度调研 — a-stock-kb
+- [ ] 方案论证 — a-stock-kb
+- [ ] 原型+PRD+OpenSpec — a-stock-kb
+- [ ] MVP 实现 — a-stock-kb
+- [ ] Ship 部署 — a-stock-kb
+- [ ] Operate 运维 — a-stock-kb
+- [ ] Grow 增长 — a-stock-kb
+- [ ] Retro+进化 — a-stock-kb
+
+## 人工检查点（默认）
+
+1. **align 完成后** — 确认 `CONTEXT.md` / `00-brief.md` 无误后 `hermes kanban unblock` 研究任务
+2. **spec 完成后** — 确认 `03-prd.md` / `openspec/tasks.md` 范围后 `hermes kanban unblock` MVP 任务
+3. **ship 完成后** — 确认 `RUNBOOK.md` / `docs/ui-acceptance-report.md` 后 `hermes kanban unblock` operate 任务
+
+## 语言要求
+
+所有面向用户的产物使用**简体中文**（代码、URL、技术标识符可保留英文）。
+
+## 阶段完成通知
+
+每阶段 `stage-complete.py` 会向飞书推送产物页链接与 Gate 状态。
+</pre></div><div class="panel" id="00-brief-md"><pre class="md-source"># 产品想法：A股全量信息检索知识库
+
+## 问题陈述
+A股市场信息高度分散，财报、公告、政策、研报、社交媒体热点等数据源割裂，个人投资者和量化研究者难以在单一平台完成&quot;采集→清洗→检索→分析&quot;的闭环。现有工具要么侧重行情数据（Wind、同花顺iFinD），要么侧重资讯聚合（东方财富），缺乏一个以&quot;事件链+因子&quot;为核心、支持毫秒级检索和ML训练的统一知识库。本项目通过三层数据架构（Bronze → Silver → Gold）和自动化采集流水线，解决这一信息碎片化问题。
+
+## 产品愿景
+构建一个A股全量信息检索知识库，采用三层架构（Bronze → Silver → Gold），实现24小时自动搜集A股板块及5000+股票相关信息，支持毫秒级查询和ML训练。
+
+## 核心架构
+- **Bronze层**：不可变原始冻结数据（一次写入，永不修改）
+- **Silver层**：清洗统一后的结构化数据
+- **Gold层**：多维因子 + ML特征 + 归档聚合
+
+## 核心功能
+1. **增量采集**：财报、资金、公告、政策、研报、合同签订
+2. **热点追踪**：雪球网、东方财富网、同花顺、淘股吧等
+3. **数据处理**：哈希去重 → 倒排索引 → 个股事件链
+4. **智能分析**：LLM消化 → 情感因子 → 推荐引擎
+5. **查询能力**：毫秒级SQL查询（单票/条件筛选/事件画像）
+6. **策略支持**：因子IC评估 + ML训练 + 组合回测
+
+## 核心原则
+- 一次采集多处复用
+- 统一写入分散消费
+- 当天数据24h内冻结入Bronze不可变层
+
+## 目标用户与Job-to-be-Done
+- **主要用户**：个人量化投资者 / 独立研究员（1人使用场景）
+- **核心任务**：当我关注某只股票或板块时，我需要快速获取其历史事件全貌、市场情绪和相关研报，以便制定或验证交易策略
+- **次要用户**：AI Agent（通过API消费数据用于策略生成和内容创作）
+
+## 使用场景
+1. **驾驶舱通知栏**：滚动输出最新热点及高价值线索
+2. **推荐引擎**：运行时多维认证
+3. **内容生成**：研报晨报公众号文章素材
+4. **个股画像**：快速全面生成个股详细分析
+5. **ML训练**：策略进化数据源
+
+## 成功标准
+- 覆盖5000+ A股股票
+- 24小时内完成数据冻结
+- 查询响应时间 &lt; 100ms
+- 数据去重准确率 &gt; 99%
+- 支持至少5个并发使用场景
+
+## 约束
+- 部署在单一 VPS（113.98.62.224:55084），资源有限（CPU/内存/磁盘需评估）
+- 个人项目，无团队支持，MVP 阶段仅支持核心链路
+- 数据采集需遵守目标网站的 robots.txt 和使用条款
+- 数据源为公开信息，不涉及付费数据库（Wind/Bloomberg）
+
+## 非目标
+- 不提供实时行情数据（只处理T+1及历史数据）
+- 不做交易执行或经纪业务
+- 不构建面向大众的SaaS产品（个人工具定位）
+- 不替代专业量化平台（如JoinQuant、RiceQuant），而是提供数据层
+
+## 部署目标
+- **服务器**：113.98.62.224:55084
+- **用户**：test
+- **认证**：SSH密钥/密码
+
+## 技术栈（初步）
+- **后端**：Python (FastAPI) + PostgreSQL + Redis + Elasticsearch
+- **前端**：React + TypeScript + Ant Design Pro
+- **数据采集**：Scrapy + Playwright
+- **ML框架**：PyTorch + scikit-learn
+- **容器化**：Docker + Docker Compose
+
+## 开放假设
+| # | 假设 | 置信度 | 验证方式 |
+|---|------|--------|----------|
+| 1 | VPS 资源（CPU≥4核、内存≥8GB、磁盘≥100GB SSD）足以支撑 MVP | 中 | 调研阶段评估数据量 |
+| 2 | 目标网站（雪球、东方财富等）的公开页面可通过爬虫稳定获取，无需付费API | 低 | 调研阶段验证可访问性 |
+| 3 | Elasticsearch 对5000+股票的全文检索能在 &lt;100ms 内响应 | 中 | 分析阶段做性能预估 |
+| 4 | LLM 情感分析的token成本在可接受范围内（&lt;¥500/月） | 中 | 调研阶段估算调用量 |
+| 5 | 用户接受T+1数据新鲜度，不要求盘中实时 | 高 | 已在非目标中明确 |
+| 6 | PostgreSQL + Elasticsearch 组合在单VPS上可同时运行 | 中 | 分析阶段评估资源占用 |
+</pre></div><div class="panel" id="CONTEXT-md"><pre class="md-source"># CONTEXT — A股全量信息检索知识库
+
+## 术语表（Glossary）
+
+| 术语 | 定义 |
+|------|------|
+| **Bronze层** | 数据湖三层架构中的原始层，存储不可变的原始采集数据。一旦写入即冻结，用于审计和重放。 |
+| **Silver层** | 清洗后的结构化数据层，完成去重、格式统一、实体对齐，是下游消费的主要数据源。 |
+| **Gold层** | 聚合/特征层，包含多维因子计算结果、ML训练特征集和归档摘要，直接服务于分析和策略。 |
+| **个股事件链** | 按时间顺序串联某只股票相关的所有事件（公告、财报、资金异动、舆情），形成可追溯的因果链。 |
+| **因子IC（Information Coefficient）** | 因子值与未来收益率的秩相关系数，用于评估因子的预测能力。IC &gt; 0.03 通常认为因子有效。 |
+| **T+1数据** | 交易日结束后（次日）才可用的数据，区别于盘中实时数据。本项目的数据新鲜度目标。 |
+| **倒排索引** | 从关键词到文档列表的映射结构，Elasticsearch 的核心检索机制，支持全文搜索。 |
+| **哈希去重** | 对采集内容计算哈希值（如SHA-256），相同哈希视为重复内容，确保数据唯一性。 |
+| **ETL管道** | Extract-Transform-Load 数据流水线，负责从 Bronze→Silver→Gold 的逐层转换。 |
+
+## 领域上下文
+
+- **A股市场**：中国大陆沪深两市，约5000+上市公司
+- **数据源类型**：财报/公告（官方披露）、资金流（交易数据）、政策（政府发布）、研报（机构产出）、舆情（社交媒体）
+- **用户画像**：个人量化投资者，具备Python/SQL基础，有策略回测需求
+- **部署环境**：单台VPS，Docker Compose编排
+
+## 关键实体
+
+- **股票**：以股票代码（如 600519.SH）为唯一标识
+- **板块**：行业/概念分类，一只股票可归属多个板块
+- **事件**：发生在某只股票或板块上的离散信息单元
+- **因子**：从原始数据中计算得出的数值特征，用于ML和选股
+</pre></div><div class="panel" id="decisions-md"><pre class="md-source"># 决策记录（ADRs）— A股全量信息检索知识库
+
+## ADR-001：采用三层数据架构（Bronze/Silver/Gold）
+
+**状态**：已采纳
+**日期**：2026-06-12
+**决策者**：pm-aligner（基于brief推导）
+
+### 上下文
+需要同时满足数据可追溯性（审计/重放）和下游消费效率（快速查询/ML特征）。
+
+### 决策
+采用数据湖三层架构：
+- Bronze：原始不可变数据（只追加）
+- Silver：清洗后的统一结构
+- Gold：聚合特征和ML就绪数据
+
+### 后果
+- ✅ 数据重放和审计成为可能
+- ✅ 各层可独立扩展和替换
+- ⚠️ 增加数据管道复杂度，需维护ETL逻辑
+- ⚠️ 单VPS上三层共存的存储开销需评估
+
+---
+
+## ADR-002：数据存储采用 PostgreSQL + Elasticsearch 组合
+
+**状态**：已采纳
+**日期**：2026-06-12
+**决策者**：pm-aligner（基于brief推导）
+
+### 上下文
+需要同时支持结构化查询（SQL筛选/关联）和全文检索（公告/研报搜索）。
+
+### 决策
+- PostgreSQL 存储结构化数据（股票元数据、因子值、事件链关系）
+- Elasticsearch 存储全文内容（公告原文、研报、舆情），提供倒排索引
+
+### 后果
+- ✅ 各自发挥所长，SQL和全文检索性能最优
+- ⚠️ 需维护两套数据库，增加运维复杂度
+- ⚠️ 单VPS上同时运行 PG + ES 对内存压力大（建议≥8GB）
+- ⚠️ 数据一致性需通过应用层保证（非分布式事务）
+
+---
+
+## ADR-003：定位为个人工具，非SaaS产品
+
+**状态**：已采纳
+**日期**：2026-06-12
+**决策者**：pm-aligner（基于brief推导）
+
+### 上下文
+项目由个人开发维护，无商业化计划。
+
+### 决策
+- 单用户架构，无需多租户/权限系统
+- 部署在个人VPS，无云原生弹性需求
+- API无需复杂的认证体系（SSH/内网即可）
+
+### 后果
+- ✅ 大幅简化架构，聚焦核心功能
+- ✅ 无需考虑水平扩展和负载均衡
+- ⚠️ 未来如需开放给多人使用需重构
+- ⚠️ 安全性依赖VPS层面防护
+
+---
+
+## ADR-004：数据新鲜度目标为T+1，不追求实时
+
+**状态**：已采纳
+**日期**：2026-06-12
+**决策者**：pm-aligner（基于brief推导）
+
+### 上下文
+实时数据采集成本高、反爬压力大，且量化策略多数基于日频数据。
+
+### 决策
+- 采集窗口：盘后批量抓取
+- 数据冻结 deadline：T+1 24:00
+- 不建设盘中实时流处理能力
+
+### 后果
+- ✅ 降低采集复杂度和反爬风险
+- ✅ 适合日频/周频策略研究
+- ⚠️ 不支持盘中预警或实时盯盘场景
+- ⚠️ 与实时行情工具需配合使用
+</pre></div><div class="panel" id="01-research-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="01b-benchmark-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="02-analysis-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="03b-user-journey-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="03-prd-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="05-retro-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="06-refine-retro-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="RUNBOOK-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="07-ops-notes-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="06-growth-md"><p><em>Not generated yet.</em></p></div><div class="panel" id="docs/ui-acceptance-report-md"><p><em>Not generated yet.</em></p></div>
+  <div class="panel" id="openspec-panel"><p><em>OpenSpec not generated yet.</em></p></div>
+  <div class="panel" id="c4-panel"><p><em>C4 architecture not generated yet.</em></p></div>
+  <div class="panel" id="journey-panel"><p><em>Not generated yet.</em></p></div>
+  <div class="panel" id="mvp-panel"><p><em>MVP not built yet.</em></p></div>
+  <div class="panel" id="ship-panel">
+    <h3>RUNBOOK</h3><p><em>Not generated yet.</em></p>
+    <h3>UI Acceptance (full)</h3><p><em>Not generated yet.</em></p>
+    <h3>Ops Notes</h3><p><em>Not generated yet.</em></p>
+    <h3>Growth</h3><p><em>Not generated yet.</em></p>
+  </div>
+  <div class="panel" id="proto-panel"><p><em>No static prototype (02b-prototype/index.html) yet.</em></p></div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    function activate(id) {
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+      panels.forEach(p => p.classList.toggle('active', p.id === id));
+    }
+    tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
+    document.querySelectorAll('.md-source').forEach((pre, i) => {
+      const panel = pre.parentElement;
+      const div = document.createElement('div');
+      div.className = 'md-render';
+      div.innerHTML = marked.parse(pre.textContent);
+      panel.insertBefore(div, pre);
+    });
+    activate(tabs[0]?.dataset.tab || 'RUN-md');
+  </script>
+</body>
+</html>
