@@ -1,0 +1,124 @@
+version: "3.8"
+
+services:
+  # ============================================
+  # FastAPI Application
+  # ============================================
+  api:
+    build: .
+    container_name: astock-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/data/astock_kb.db
+    volumes:
+      - app-data:/app/data
+      - app-logs:/app/logs
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - astock-net
+
+  # ============================================
+  # PostgreSQL (Production Mode)
+  # ============================================
+  postgresql:
+    image: postgres:16-alpine
+    container_name: astock-postgres
+    environment:
+      POSTGRES_DB: astock_kb
+      POSTGRES_USER: astock
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-***
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astock -d astock_kb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - astock-net
+
+  # ============================================
+  # Elasticsearch (Production Mode)
+  # ============================================
+  elasticsearch:
+    image: elasticsearch:8.15.0
+    container_name: astock-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - astock-net
+
+  # ============================================
+  # Redis (Cache & Queue)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: astock-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - astock-net
+
+  # ============================================
+  # Data Collector (Scheduled Tasks)
+  # ============================================
+  collector:
+    build: .
+    container_name: astock-collector
+    command: python -m api.collectors.scheduler
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/app/data/astock_kb.db
+    volumes:
+      - app-data:/app/data
+      - app-logs:/app/logs
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - astock-net
+
+volumes:
+  pg-data:
+  es-data:
+  redis-data:
+  app-data:
+  app-logs:
+
+networks:
+  astock-net:
+    driver: bridge
