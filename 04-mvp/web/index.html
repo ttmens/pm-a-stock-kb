@@ -460,6 +460,39 @@ a:hover { text-decoration: underline; }
   font-size: 13px;
 }
 
+/* Focus / Accessibility */
+*:focus-visible {
+  outline: 2px solid #4c6ef5;
+  outline-offset: 2px;
+}
+button:focus-visible, .hint-tag:focus-visible, .filter-tag:focus-visible,
+.time-btn:focus-visible, .view-btn:focus-visible, .nav-tab:focus-visible,
+.trigger-btn:focus-visible, .export-btn:focus-visible {
+  outline: 2px solid #4c6ef5;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(76,110,245,0.25);
+}
+.search-input:focus-visible {
+  outline: 2px solid #4c6ef5;
+  outline-offset: -2px;
+}
+.modal-close:focus-visible {
+  outline: 2px solid #4c6ef5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Disclaimer footer */
+.disclaimer {
+  text-align: center;
+  padding: 24px 16px;
+  color: #5a5d6e;
+  font-size: 12px;
+  line-height: 1.8;
+  border-top: 1px solid #2a2d3e;
+  margin-top: 48px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .nav { padding: 0 12px; }
@@ -476,14 +509,14 @@ a:hover { text-decoration: underline; }
 </head>
 <body>
 
-<nav class="nav">
+<nav class="nav" role="navigation" aria-label="主导航">
   <div class="nav-brand">A股知识库</div>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchScreen('dashboard')">搜索</button>
-    <button class="nav-tab" onclick="switchScreen('events')">事件链</button>
-    <button class="nav-tab" onclick="switchScreen('search')">全文搜索</button>
-    <button class="nav-tab" onclick="switchScreen('factors')">因子</button>
-    <button class="nav-tab" onclick="switchScreen('system')">系统</button>
+    <button class="nav-tab active" onclick="switchScreen('dashboard')" aria-label="搜索">搜索</button>
+    <button class="nav-tab" onclick="switchScreen('events')" aria-label="事件链">事件链</button>
+    <button class="nav-tab" onclick="switchScreen('search')" aria-label="全文搜索">全文搜索</button>
+    <button class="nav-tab" onclick="switchScreen('factors')" aria-label="因子数据">因子</button>
+    <button class="nav-tab" onclick="switchScreen('system')" aria-label="系统状态">系统</button>
   </div>
 </nav>
 
@@ -494,8 +527,8 @@ a:hover { text-decoration: underline; }
       <h1>A股全量信息检索</h1>
       <p>输入股票代码、名称或关键词，快速检索公告、研报、舆情与事件链</p>
       <div class="search-box">
-        <input class="search-input" id="main-search" type="text" placeholder="输入股票代码/名称/关键词" />
-        <button class="search-btn" onclick="doSearch()">搜索</button>
+        <input class="search-input" id="main-search" type="text" placeholder="输入股票代码/名称/关键词" aria-label="搜索框" />
+        <button class="search-btn" onclick="doSearch()" aria-label="搜索">搜索</button>
       </div>
       <div class="search-hints">
         <span class="hint-tag" onclick="quickSearch('600519')">600519 贵州茅台</span>
@@ -563,7 +596,7 @@ a:hover { text-decoration: underline; }
           <button class="view-btn active" onclick="toggleView(this,'table')">表格</button>
           <button class="view-btn" onclick="toggleView(this,'chart')">图表</button>
         </div>
-        <button class="export-btn" onclick="exportFactors()">导出CSV</button>
+        <button class="export-btn" onclick="exportFactors()" aria-label="导出因子数据为CSV">导出CSV</button>
       </div>
     </div>
     <div class="filter-bar">
@@ -591,15 +624,15 @@ a:hover { text-decoration: underline; }
     <div id="system-loading" class="loading" style="display:none;">加载中...</div>
     <div id="system-error" class="error-msg" style="display:none;"></div>
     <div class="etl-log"><h3>ETL运行日志</h3><div id="etl-log-entries"><div class="log-entry info">暂无ETL运行记录</div></div></div>
-    <button class="trigger-btn" onclick="triggerETL()">手动触发采集</button>
-    <button class="trigger-btn" style="background:#6f5a2a;margin-left:12px;" onclick="triggerReETL()">重新运行ETL</button>
+    <button class="trigger-btn" onclick="triggerETL()" aria-label="手动触发数据采集">手动触发采集</button>
+    <button class="trigger-btn" style="background:#6f5a2a;margin-left:12px;" onclick="triggerReETL()" aria-label="重新运行ETL">重新运行ETL</button>
   </div>
 </div>
 
 <!-- S6: Event Detail Modal -->
-<div class="modal-overlay" id="event-modal" onclick="closeModal(event)">
+<div class="modal-overlay" id="event-modal" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-label="事件详情">
   <div class="modal" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="closeModalDirect()">&times;</button>
+    <button class="modal-close" onclick="closeModalDirect()" aria-label="关闭">&times;</button>
     <h2 id="modal-title">事件标题</h2>
     <div class="m-meta" id="modal-meta"></div>
     <div class="m-content" id="modal-content"></div>
@@ -918,5 +951,12 @@ document.getElementById('main-search').addEventListener('keypress', function(e) 
 loadQuickStocks();
 loadDashStatus();
 </script>
+
+<!-- Disclaimer -->
+<footer class="disclaimer" role="contentinfo">
+  <p>⚠️ 本系统仅供个人研究参考，不构成任何投资建议。股市有风险，投资需谨慎。</p>
+  <p>数据来源于公开渠道，仅供参考，不保证数据的准确性、完整性与及时性。</p>
+</footer>
+
 </body>
 </html>

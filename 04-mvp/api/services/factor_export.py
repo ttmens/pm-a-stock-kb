@@ -27,7 +27,7 @@ def export_factors_csv(stock_code: str, factor_type: str = None,
         rows = c.fetchall()
 
         output = io.StringIO()
-        writer = csv.writer(output)
+        writer = csv.writer(output, lineterminator="\n")
         writer.writerow(["stock_code", "factor_date", "factor_name", "factor_value"])
         for row in rows:
             writer.writerow([row["stock_code"], row["factor_date"],

@@ -2,14 +2,14 @@
   "run": "pm-a-stock-kb",
   "path": "D:\\workspace\\projects\\pm-a-stock-kb",
   "pipeline_version": "5.1.0",
-  "validated_at": "2026-06-11T17:16:05.836454+00:00",
+  "validated_at": "2026-06-11T17:37:30.081076+00:00",
   "stages": {
-    "ux-review": {
+    "ship": {
       "pass": true,
       "checks": [
-        "p0_issues=0",
-        "waived_refs=0",
-        "ux_review_exists"
+        "runbook_exists",
+        "ui_acceptance_report",
+        "deploy_ready"
       ],
       "notes": ""
     }
