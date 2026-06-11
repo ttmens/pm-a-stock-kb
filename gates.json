@@ -2,13 +2,14 @@
   "run": "pm-a-stock-kb",
   "path": "D:\\workspace\\projects\\pm-a-stock-kb",
   "pipeline_version": "5.1.0",
-  "validated_at": "2026-06-11T17:45:05.804425+00:00",
+  "validated_at": "2026-06-11T17:47:24.658625+00:00",
   "stages": {
-    "operate": {
+    "grow": {
       "pass": true,
       "checks": [
-        "ops_sections>=5",
-        "ops_notes_exists"
+        "growth_exists",
+        "has_nsm",
+        "has_gtm"
       ],
       "notes": ""
     }
