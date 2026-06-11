@@ -2,14 +2,13 @@
   "run": "pm-a-stock-kb",
   "path": "D:\\workspace\\projects\\pm-a-stock-kb",
   "pipeline_version": "5.1.0",
-  "validated_at": "2026-06-11T17:42:25.783161+00:00",
+  "validated_at": "2026-06-11T17:44:35.670335+00:00",
   "stages": {
-    "ship": {
+    "operate": {
       "pass": true,
       "checks": [
-        "runbook_exists",
-        "ui_acceptance_report",
-        "deploy_ready"
+        "ops_sections>=5",
+        "ops_notes_exists"
       ],
       "notes": ""
     }
